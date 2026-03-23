@@ -35,18 +35,6 @@ class Student(db.Model):
     student_user = db.relationship('User',back_populates="students")
     student_supervisor = db.relationship("Supervisor",back_populates="supervisor_student")
     student_assignment_submissions = db.relationship('Student_Submission',back_populates="submissions")
-
-class Supervisor(db.Model):
-    __tablename__= "supervisor"
-    supervisor_id = db.Column(db.Integer,primary_key=True)
-    user_id = db.Column(db.Integer , db.ForeignKey("user.user_id"),unique=True)
-    research_interests = db.Column(db.Text , nullable=True)
-    max_2nd_year_capacity = db.Column(db.Integer,nullable= False)
-    max_4th_year_capacity = db.Column(db.Integer,nullable= False)
-
-    # Relationships
-    supervisor_user = db.relationship('User',back_populates="supervisors")
-    supervisor_student = db.relationship('Student',back_populates="student_supervisor")
     
 class Upload_log(db.Model):
     __tablename__ = "upload_log"
@@ -59,6 +47,7 @@ class Upload_log(db.Model):
     records_added = db.Column(db.Integer,nullable=False)
     error_report = db.Column(db.JSON,nullable=False)
     uploaded_at = db.Column(db.DateTime,default=datetime.utcnow)
+
     # Relationship
     csv_attempt = db.relationship("User",back_populates="upload_logs")
 
@@ -71,9 +60,7 @@ class Student_Submission(db.Model):
 
     # Relationship
     submissions = db.relationship("Student",back_populates="student_assignment_submissions")
-
     student_submission_milestone = db.relationship("Milestone",back_populates="milestone_student_submission")
-
     submission_attachment = db.relationship("Submission_Attachment",back_populates="attachment_submission")
 
 class Milestone(db.Model):
@@ -96,19 +83,41 @@ class Submission_Attachment(db.Model):
 
     # Relationship
     attachment_submission = db.relationship("Student_Submission",back_populates="submission_attachment")
+
+class Supervisor(db.Model):
+    __tablename__= "supervisor"
+    supervisor_id = db.Column(db.Integer,primary_key=True)
+    user_id = db.Column(db.Integer , db.ForeignKey("user.user_id"),unique=True)
+    research_interests = db.Column(db.Text , nullable=True)
+    max_2nd_year_capacity = db.Column(db.Integer,nullable= False)
+    max_4th_year_capacity = db.Column(db.Integer,nullable= False)
+
+    # Relationships
+    supervisor_user = db.relationship('User',back_populates="supervisors")
+    supervisor_student = db.relationship('Student',back_populates="student_supervisor")
+    supervisors_to_interests = db.relationship('Supervisor_Interest',back_populates="interests_to_supervisors")
+ 
+class Supervisor_Interest(db.Model):
+    __tablename__= "supervisor_interest"
+    supervisor_id = db.Column(db.Integer, db.ForeignKey("supervisor.supervisor_id"), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey("research_tag.tag_id"), primary_key=True)
     
-class project_pitches(db.Model):
-    pass
+    # Relationships 
+    interests_to_supervisors = db.relationship('Supervisor',back_populates="supervisors_to_interests")
+    interests_to_tags = db.relationship("Research_Tag",back_populates="tags_to_interests")
+    
+class Research_Tag(db.Model):
+    __tablename__= "research_tag"
+    tag_id = db.Column(db.Integer , primary_key = True)
+    tag_name = db.Column(db.String(50) , unique=True, nullable=False)
 
-class supervisor_interests(db.Model):
-    pass
+    # Relationship
+    tags_to_interests = db.relationship("Supervisor_Interest",back_populates="interests_to_tags")
 
-class research_tags(db.Model):
-    pass
+
 
 class broadcasts(db.Model):
     pass
-
 
 class panels(db.Model):
     pass
@@ -116,3 +125,5 @@ class panels(db.Model):
 class panel_members(db.Model):
     pass
 
+class project_pitches(db.Model):
+    pass
