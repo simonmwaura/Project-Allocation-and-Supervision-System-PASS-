@@ -34,6 +34,7 @@ class Student(db.Model):
     # Relationships
     student_user = db.relationship('User',back_populates="students")
     student_supervisor = db.relationship("Supervisor",back_populates="supervisor_student")
+    student_assignment_submissions = db.relationship('Student_Submission',back_populates="submissions")
 
 class Supervisor(db.Model):
     __tablename__= "supervisor"
@@ -47,7 +48,6 @@ class Supervisor(db.Model):
     supervisor_user = db.relationship('User',back_populates="supervisors")
     supervisor_student = db.relationship('Student',back_populates="student_supervisor")
     
-
 class Upload_log(db.Model):
     __tablename__ = "upload_log"
     log_id = db.Column(db.Integer , primary_key = True)
@@ -62,15 +62,41 @@ class Upload_log(db.Model):
     # Relationship
     csv_attempt = db.relationship("User",back_populates="upload_logs")
 
-class milestones(db.Model):
-    pass
+class Student_Submission(db.Model):
+    __tablename__= "student_submission"
+    submission_id = db.Column(db.Integer,primary_key=True)
+    student_id = db.Column(db.Integer , db.ForeignKey("student.student_id"))
+    milestone_id = db.Column(db.Integer,db.ForeignKey("milestone.milestone_id")) 
+    submission_at = db.Column(db.DateTime,default=datetime.utcnow)
 
-class student_submissions(db.Model):
-    pass
+    # Relationship
+    submissions = db.relationship("Student",back_populates="student_assignment_submissions")
 
-class submission_attachments(db.Model):
-    pass
+    student_submission_milestone = db.relationship("Milestone",back_populates="milestone_student_submission")
 
+    submission_attachment = db.relationship("Submission_Attachment",back_populates="attachment_submission")
+
+class Milestone(db.Model):
+    __tablename__= "milestone"
+    milestone_id= db.Column(db.Integer,primary_key=True)
+    milestone_name= db.Column(db.String(50),nullable=False)
+    year = db.Column(db.Enum('2','4',name="year_levels"),nullable=False)
+    is_required = db.Column(db.Boolean ,nullable=False)
+    due_date = db.Column(db.DateTime,default=datetime.utcnow)
+
+    # Relationship
+    milestone_student_submission= db.relationship("Student_Submission",back_populates="student_submission_milestone")
+
+class Submission_Attachment(db.Model):
+    __tablename__="submission_attachment"
+    attachment_id = db.Column(db.Integer,primary_key=True)
+    submission_id = db.Column(db.Integer,db.ForeignKey("student_submission.submission_id"))
+    file_url = db.Column(db.String(250),nullable=False)
+    file_type = db.Column(db.String(250),nullable=False)
+
+    # Relationship
+    attachment_submission = db.relationship("Student_Submission",back_populates="submission_attachment")
+    
 class project_pitches(db.Model):
     pass
 
@@ -82,7 +108,6 @@ class research_tags(db.Model):
 
 class broadcasts(db.Model):
     pass
-
 
 
 class panels(db.Model):
