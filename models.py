@@ -96,6 +96,7 @@ class Supervisor(db.Model):
     supervisor_user = db.relationship('User',back_populates="supervisors")
     supervisor_student = db.relationship('Student',back_populates="student_supervisor")
     supervisors_to_interests = db.relationship('Supervisor_Interest',back_populates="interests_to_supervisors")
+    coordinator_profile = db.relationship("Coordinator",back_populates="coordinator_supervisor")
  
 class Supervisor_Interest(db.Model):
     __tablename__= "supervisor_interest"
@@ -114,16 +115,44 @@ class Research_Tag(db.Model):
     # Relationship
     tags_to_interests = db.relationship("Supervisor_Interest",back_populates="interests_to_tags")
 
+class Coordinator(db.Model):
+    __tablename__ = 'coordinator'
+    coordinator_id = db.Column(db.Integer, primary_key=True)
+    supervisor_id = db.Column(db.Integer, db.ForeignKey('supervisor.supervisor_id'), unique=True, nullable=False)
+    year = db.Column(db.Enum('2', '4', name='coordinator_year'), nullable=False)
 
+    # Relationships
+    coordinator_supervisor = db.relationship('Supervisor', back_populates='coordinator_profile')
+    broadcasts = db.relationship('Broadcast', back_populates='author')
+    panels = db.relationship('Panel', back_populates='created_by')
 
-class broadcasts(db.Model):
+class Broadcast(db.Model):
+    __tablename__ = 'broadcast'
+    broadcast_id = db.Column(db.Integer, primary_key=True)
+    coordinator_id = db.Column(db.Integer, db.ForeignKey('coordinator.coordinator_id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    attachment_url = db.Column(db.String(255), nullable=True)
+
+    # Relationship
+    author = db.relationship('Coordinator', back_populates='broadcasts')
+
+class Panel(db.Model):
+    __tablename__ = 'panel'
+    panel_id = db.Column(db.Integer, primary_key=True)
+    coordinator_id = db.Column(db.Integer, db.ForeignKey('coordinator.coordinator_id'), nullable=False)
+    panel_number = db.Column(db.String(5), nullable=False)
+    year = db.Column(db.Enum('2', '4', name='panel_year'), nullable=False)
+    max_capacity = db.Column(db.Integer, nullable=False,default=3)
+
+    # Relationships
+    created_by = db.relationship('Coordinator', back_populates='panels')
+    members = db.relationship('Panel_Member', back_populates='panel')
+    students_assigned = db.relationship('Student', back_populates='panel_assigned')
+
+class Panel_Member(db.Model):
     pass
 
-class panels(db.Model):
+class Project_Pitch(db.Model):
     pass
 
-class panel_members(db.Model):
-    pass
-
-class project_pitches(db.Model):
-    pass
