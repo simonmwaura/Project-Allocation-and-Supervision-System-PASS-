@@ -3,6 +3,7 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+from .academic_cycle import AcademicCycle
 from .broadcasts import Broadcast
 from .coordinators import Coordinator
 from .milestones import Milestone
@@ -17,5 +18,4 @@ from .supervisor_interests import Supervisor_Interest
 from .supervisors import Supervisor
 from .upload_logs import Upload_log
 from .users import User
-from .academic_cycle import AcademicCycle
 
