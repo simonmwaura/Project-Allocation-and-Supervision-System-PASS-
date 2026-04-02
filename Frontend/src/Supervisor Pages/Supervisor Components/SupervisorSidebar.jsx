@@ -1,15 +1,14 @@
-import { FiGrid, FiFileText, FiUser, FiLogOut, FiX } from "react-icons/fi";
+import { FiGrid, FiUsers, FiClipboard, FiUser, FiLogOut, FiX } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 
 const BRAND = "#2b20d6";
 
-const StudentSidebar = ({ isOpen, setIsOpen }) => {
+const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      {/* Background overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/20 md:hidden"
@@ -30,32 +29,41 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
 
         <div className="text-center mb-8" style={{ color: BRAND }}>
           <div className="text-4xl font-bold tracking-wide">PASS</div>
-          <div className="text-sm font-semibold">Student Portal</div>
+          <div className="text-sm font-semibold">Supervisor Portal</div>
         </div>
 
         <nav className="flex flex-col gap-2">
           <Link
-            to="/student/dashboard"
+            to="/supervisor/dashboard"
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
-            style={isActive("/Dashboard") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
+            style={isActive("/supervisor/dashboard") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
           >
             <FiGrid size={20} />
             Dashboard
           </Link>
 
           <Link
-            to="/student/myproject"
+            to="/supervisor/mysupervisees"
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
-            style={isActive("/MyProject") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
+            style={isActive("/supervisor/mysupervisees") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
           >
-            <FiFileText size={20} />
-            My Project
+            <FiUsers size={20} />
+            My Supervisees
           </Link>
 
           <Link
-            to="/student/profile"
+            to="/supervisor/mypanel"
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
-            style={isActive("/StudentProfile") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
+            style={isActive("/supervisor/mypanel") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
+          >
+            <FiClipboard size={20} />
+            My Panel
+          </Link>
+
+          <Link
+            to="/supervisor/profile"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
+            style={isActive("/supervisor/profile") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
           >
             <FiUser size={20} />
             Profile
@@ -74,4 +82,4 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
   );
 };
 
-export default StudentSidebar;
+export default SupervisorSidebar;
