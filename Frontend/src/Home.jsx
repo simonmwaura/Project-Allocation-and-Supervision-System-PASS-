@@ -32,7 +32,7 @@ const Home = () => {
         </button>
 
         <button
-          onClick={() => navigate("/admin/dashboard")}
+          onClick={() => navigate("/administrator/dashboard")}
           className="px-10 py-6 rounded-2xl font-bold text-lg transition-opacity hover:opacity-90 border-2"
           style={{ color: BRAND, borderColor: BRAND }}
         >

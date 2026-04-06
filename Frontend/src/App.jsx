@@ -16,6 +16,14 @@ import MySupervisees from './Supervisor Pages/MySupervisees';
 import MyPanel from './Supervisor Pages/MyPanel'
 import SupervisorProfile from './Supervisor Pages/SupervisiorProfile'
 
+// Administrator Routes
+import AdministratorLayout from './Administrator Pages/Administrator Component/AdministratorLayout'
+import AdministratorDashboard from './Administrator Pages/AdministratorDashboard';
+import ManageFaculty from './Administrator Pages/ManageFaculty'
+import ImportData from './Administrator Pages/ImportData'
+import AdministratorProfile from './Administrator Pages/AdministratorProfile'
+import ManageStudents from './Administrator Pages/ManageStudents'
+
 function App() {
   return (
     <BrowserRouter>
@@ -33,8 +41,19 @@ function App() {
         <Route path="/supervisor" element={<SupervisorLayout/>}>
            <Route path='dashboard'element={<SupervisorDashboard/>}/>
            <Route path='mysupervisees' element={<MySupervisees/>}/>
-           <Route path='mypanel' element={<MyPanel/>}/>
+            <Route path='mypanel' element={<MyPanel/>}/>
            <Route path='profile' element={<SupervisorProfile/>}/>
+        </Route>
+
+        {/* Administrator Routes */}
+        <Route path="/administrator" element={<AdministratorLayout/>}>
+           <Route path='dashboard' element={<AdministratorDashboard/>}/>
+           <Route path='managefaculty' element={<ManageFaculty/>}/>
+           <Route path='dataimport' element={<ImportData/>}/>
+
+           <Route path='managestudents' element={<ManageStudents/>}/>
+           <Route path='profile' element={<AdministratorProfile/>} />
+
         </Route>
       </Routes>
     </BrowserRouter>

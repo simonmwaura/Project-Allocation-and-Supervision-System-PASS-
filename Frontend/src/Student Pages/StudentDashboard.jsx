@@ -6,6 +6,28 @@ const StudentDashboard = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   // 2. The Database Fetch (Simulated)
   useEffect(() => {
     // Simulating a 1-second delay from your Flask backend

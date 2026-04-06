@@ -1,5 +1,38 @@
 import React, { useState, useEffect } from "react";
-import NoActiveProject from "./Student Components/NoActiveProject "; // Adjust path if needed
+import { FiFileText, FiUploadCloud, FiClock, FiBell } from "react-icons/fi";
+import NoActiveProject from "./Student MyProject Components/NoActiveProject "
+
+// Reusable Card Component
+const DashboardCard = ({ title, description, icon: Icon, buttonText, onClick }) => {
+  return (
+    <div
+      className="bg-white border-2 flex flex-col items-center rounded-[15px] p-6 shadow-sm w-full h-full"
+      style={{ borderColor: "#302AE2" }}
+    >
+      <h3 className="font-bold text-xl text-gray-700 mt-2 text-center">
+        {title}
+      </h3>
+
+      <div className="flex justify-center mt-6 mb-4" style={{ color: "#475569" }}>
+        <Icon size={72} strokeWidth={1.5} />
+      </div>
+
+      <p className="font-medium text-sm text-gray-500 px-2 text-center flex-1">
+        {description}
+      </p>
+
+      <div className="flex justify-center w-full mt-6">
+        <button
+          onClick={onClick}
+          className="h-12 rounded-xl w-[90%] text-white font-bold text-lg hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: "#302AE2" }}
+        >
+          {buttonText}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const MyProject = () => {
   const [project, setProject] = useState(null);
@@ -7,31 +40,67 @@ const MyProject = () => {
 
   useEffect(() => {
     setTimeout(() => {
-      setProject(null); 
+      setProject({ id: 1, title: "Project Allocation System" });
       setIsLoading(false);
     }, 1000);
   }, []);
 
   return (
-    // FIX: w-full h-full min-h-[80vh] with flex items-center justify-center
-    // This guarantees whatever is inside sits perfectly in the middle of the screen
-    <div className="w-full h-full min-h-[80vh] flex flex-col items-center justify-center">
-        
-        {isLoading ? (
-          <div className="text-[#2b20d6] text-xl font-bold animate-pulse">
-            Loading project data...
+    <div className="w-full flex flex-col items-center px-4 pt-8 pb-12">
+
+      {isLoading ? (
+        <div className="text-xl font-bold animate-pulse mt-20" style={{ color: "#302AE2" }}>
+          Loading project workspace...
+        </div>
+      ) : !project ? (
+        <NoActiveProject />
+      ) : (
+        <div className="w-full max-w-4xl">
+
+          <h2
+            className="text-3xl font-bold mb-10 text-center"
+            style={{ color: "#302AE2" }}
+          >
+            My Project Workspace
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+
+            <DashboardCard
+              title="Project Details"
+              icon={FiFileText}
+              description="View your approved project title, supervisor information, and track your current progress across the semester milestones."
+              buttonText="View Details"
+              onClick={() => console.log("Navigate to Details")}
+            />
+
+            <DashboardCard
+              title="Upload Documents"
+              icon={FiUploadCloud}
+              description="Submit your required .PDF or .DOCX milestone documents for your supervisor to review."
+              buttonText="Upload Now"
+              onClick={() => console.log("Navigate to Uploads")}
+            />
+
+            <DashboardCard
+              title="Submission History"
+              icon={FiClock}
+              description="Access your previously uploaded documents, download files, and check the review status of your submissions."
+              buttonText="View History"
+              onClick={() => console.log("Navigate to History")}
+            />
+
+            <DashboardCard
+              title="Coordinator Notices"
+              icon={FiBell}
+              description="Read the latest milestone requirements, formatting rules, and official announcements from the Project Coordinator."
+              buttonText="View Notices"
+              onClick={() => console.log("Navigate to Notices")}
+            />
+
           </div>
-        ) : !project ? (
-          <NoActiveProject />
-        ) : (
-          <div className="bg-white p-6 md:p-8 rounded-2xl border-2 border-[#2b20d6] shadow-sm">
-            <h2 className="text-2xl font-bold text-[#2b20d6] mb-4">
-              {project.title}
-            </h2>
-            <p className="text-gray-700">Project details go here.</p>
-          </div>
-        )}
-        
+        </div>
+      )}
     </div>
   );
 };
