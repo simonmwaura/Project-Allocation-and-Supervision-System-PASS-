@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FiFileText, FiUploadCloud, FiClock, FiBell } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import NoActiveProject from "./Student MyProject Components/NoActiveProject "
 
-// Reusable Card Component
 const DashboardCard = ({ title, description, icon: Icon, buttonText, onClick }) => {
   return (
     <div
@@ -35,6 +35,7 @@ const DashboardCard = ({ title, description, icon: Icon, buttonText, onClick }) 
 };
 
 const MyProject = () => {
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,7 +72,7 @@ const MyProject = () => {
               icon={FiFileText}
               description="View your approved project title, supervisor information, and track your current progress across the semester milestones."
               buttonText="View Details"
-              onClick={() => console.log("Navigate to Details")}
+              onClick={() => navigate("/student/project-details")}
             />
 
             <DashboardCard
@@ -79,7 +80,7 @@ const MyProject = () => {
               icon={FiUploadCloud}
               description="Submit your required .PDF or .DOCX milestone documents for your supervisor to review."
               buttonText="Upload Now"
-              onClick={() => console.log("Navigate to Uploads")}
+              onClick={() => navigate("/student/upload-document")}
             />
 
             <DashboardCard
@@ -87,7 +88,7 @@ const MyProject = () => {
               icon={FiClock}
               description="Access your previously uploaded documents, download files, and check the review status of your submissions."
               buttonText="View History"
-              onClick={() => console.log("Navigate to History")}
+              onClick={() => navigate("/student/submission-history")}
             />
 
             <DashboardCard
@@ -95,7 +96,7 @@ const MyProject = () => {
               icon={FiBell}
               description="Read the latest milestone requirements, formatting rules, and official announcements from the Project Coordinator."
               buttonText="View Notices"
-              onClick={() => console.log("Navigate to Notices")}
+              onClick={() => navigate("/student/coordinator-notices")}
             />
 
           </div>
