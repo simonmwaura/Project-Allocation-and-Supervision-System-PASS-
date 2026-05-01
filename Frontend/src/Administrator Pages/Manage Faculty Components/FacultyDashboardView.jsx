@@ -1,13 +1,7 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; // <-- 1. ADD THIS IMPORT
 import { 
-  FiUsers, 
-  FiUserCheck, 
-  FiUserMinus, 
-  FiUserX, 
-  FiSearch, 
-  FiChevronDown,
-  FiArrowLeft,
-  FiUser
+  FiUsers, FiUserCheck, FiUserMinus, FiUserX, FiSearch, FiChevronDown 
 } from "react-icons/fi";
 
 const BRAND = "#2b20d6";
@@ -80,10 +74,10 @@ const FacultyAccountDetails = ({ facultyMember, onBack }) => {
 
 // --- MAIN DASHBOARD COMPONENT ---
 const FacultyDashboardView = ({ faculty }) => {
+  const navigate = useNavigate(); // <--- ADD THIS LINE HERE!
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [selectedFaculty, setSelectedFaculty] = useState(null);
 
   // Filter Logic
   const filteredFaculty = useMemo(() => {
@@ -96,14 +90,13 @@ const FacultyDashboardView = ({ faculty }) => {
     });
   }, [faculty, searchQuery, statusFilter]);
 
-  // View Details Router
-  if (selectedFaculty) {
-    return (
-      <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
-        <FacultyAccountDetails facultyMember={selectedFaculty} onBack={() => setSelectedFaculty(null)} />
-      </div>
-    );
-  }
+  // --- NEW: Calculate Dynamic Metrics based on the fetched data ---
+  const totalFaculty = faculty.length;
+  const activeFaculty = faculty.filter(f => f.status === "Active").length;
+  const pendingFaculty = faculty.filter(f => f.status === "Pending").length;
+  const suspendedFaculty = faculty.filter(f => f.status === "Suspended").length;
+
+
 
   // Main Dashboard Return
   return (
@@ -115,12 +108,12 @@ const FacultyDashboardView = ({ faculty }) => {
         Supervisors Account Management
       </h2>
 
-      {/* 1. Metric Cards Grid */}
+      {/* 1. Metric Cards Grid (NOW DYNAMIC!) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">
-        <MetricCard icon={FiUsers} title="Total Supervisors" value="20" color={BRAND} bgClass="bg-blue-50/30" />
-        <MetricCard icon={FiUserCheck} title="Active Accounts" value="15" color="#16a34a" bgClass="bg-green-50/50" />
-        <MetricCard icon={FiUserMinus} title="Pending Approval" value="5" color="#eab308" textColor="#334155" bgClass="bg-yellow-50/50" />
-        <MetricCard icon={FiUserX} title="Suspended" value="0" color="#ef4444" bgClass="bg-red-50/50" />
+        <MetricCard icon={FiUsers} title="Total Supervisors" value={totalFaculty} color={BRAND} bgClass="bg-blue-50/30" />
+        <MetricCard icon={FiUserCheck} title="Active Accounts" value={activeFaculty} color="#16a34a" bgClass="bg-green-50/50" />
+        <MetricCard icon={FiUserMinus} title="Pending Approval" value={pendingFaculty} color="#eab308" textColor="#334155" bgClass="bg-yellow-50/50" />
+        <MetricCard icon={FiUserX} title="Suspended" value={suspendedFaculty} color="#ef4444" bgClass="bg-red-50/50" />
       </div>
 
       {/* 2. Filter & Search Bar */}
@@ -186,10 +179,8 @@ const FacultyDashboardView = ({ faculty }) => {
                       <StatusBadge status={row.status} />
                     </td>
                     <td className="border-[1.5px] p-3 text-center" style={{ borderColor: BRAND }}>
-                      {/* Notice the inverted styling here to match your mockup: 
-                          Active = Outline Button, Pending = Solid Blue Button */}
-                      <button 
-                        onClick={() => setSelectedFaculty(row)}
+                     <button 
+                        onClick={() => navigate(`/administrator/managefaculty/${row.id}`, { state: { facultyData: row } })} // <-- 3. UPDATE THIS LINE
                         className={`px-5 sm:px-6 py-1.5 rounded-md font-bold text-[12px] sm:text-[13px] border-[1.5px] transition-opacity whitespace-nowrap ${
                           row.status === "Pending" ? "bg-[#2b20d6] text-white hover:opacity-90" : "bg-white hover:bg-blue-50 text-[#2b20d6]"
                         }`}

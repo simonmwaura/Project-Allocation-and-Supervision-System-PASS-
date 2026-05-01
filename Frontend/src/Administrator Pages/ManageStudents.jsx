@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify'; // <-- Make sure to import this
 import NoStudentFound from './ManageStudentsComponents/NoStudentFound'; 
-import StudentDashboardView from './ManageStudentsComponents/StudentDashboardView'; // <-- Import the new component
+import StudentDashboardView from './ManageStudentsComponents/StudentDashboardView'; 
 
 const BRAND = "#2b20d6";
 
@@ -9,39 +10,59 @@ export default function ManageStudents() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulating a database fetch
-    setTimeout(() => {
-      // I populated this with data so you can see the table immediately!
-      // To see the NoStudentFound component again, just change this to: setStudents([])
-      setStudents([
-        { id: 1, name: "Simon Mwaura", reg: "SCS3/148688/2024", year: 2, status: "Active" },
-        { id: 2, name: "Peter Kiamba", reg: "P15/147890/2020", year: 4, status: "Pending" },
-      ]); 
-      setIsLoading(false);
-    }, 500);
+    const fetchStudents = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        
+        const response = await fetch("http://127.0.0.1:5000/api/users/students", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Map the database fields to match the React component's expected format
+          const formattedStudents = data.data.map(user => ({
+            id: user.user_id,
+            name: `${user.first_name} ${user.last_name}`,
+            email: user.email,
+            phone: user.phone_number,
+            // If your DB doesn't have reg/year yet, these provide safe fallbacks
+            reg: user.reg_number || "Not Assigned", 
+            year: user.academic_year || 2,
+            status: user.status === 'Accepted' ? 'Active' : user.status 
+          }));
+          
+          setStudents(formattedStudents);
+        } else {
+          toast.error(data.message || "Failed to fetch student data.");
+        }
+      } catch (error) {
+        console.error("Error fetching students:", error);
+        toast.error("Could not connect to the server.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
   }, []);
 
   return (
-    // The transparent flex container to perfectly center whichever component renders
     <div className="w-full h-full min-h-[75vh] flex flex-col items-center justify-center p-4">
-      
         {isLoading ? (
             <div className="flex flex-col items-center justify-center font-bold animate-pulse" style={{ color: BRAND }}>
               Loading student registry...
             </div>
         ) : students.length === 0 ? (
-            
-            // Renders if the database is empty
             <NoStudentFound />
-
         ) : (
-            
-            // Renders if there are students in the database
-            // We pass the students array down as a prop!
             <StudentDashboardView students={students} />
-
         )}
-
     </div>
   );
 }

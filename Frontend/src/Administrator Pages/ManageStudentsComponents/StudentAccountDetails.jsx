@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // Added useState
+import React, { useState } from "react";
 import { 
   FiArrowLeft, 
   FiUser, 
@@ -7,175 +7,251 @@ import {
   FiHash,
   FiChevronDown
 } from "react-icons/fi";
-import SuspendAccountModal from "./SuspendAccountModal"; // <-- Import the modal
+import SuspendAccountModal from "./SuspendAccountModal";
+import { toast } from 'react-toastify';
 
 const BRAND = "#2b20d6";
 
-// ... [Keep your existing StatusBadge component here] ...
-const StatusBadge = ({ status }) => {
-  if (status === "Active") {
-    return <span className="px-4 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Active</span>;
-  }
-  if (status === "Pending") {
-    return <span className="px-4 py-1 rounded-full border border-yellow-400 text-gray-800 bg-yellow-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Pending</span>;
-  }
-  if (status === "Suspended") {
-    return <span className="px-4 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Suspended</span>;
-  }
-  return null;
-};
-
 const StudentAccountDetails = ({ student, onBack }) => {
-  // --- ADD STATE FOR MODAL ---
+  // --- STATES ---
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // For Suspend button
+  const [isSaving, setIsSaving] = useState(false);         // For Save button
 
-  const phone = student.phone || "+254734145632";
-  const email = student.email || "simonmwaura@students.uonbi.ac.ke";
+  // Local state for the Edit Form
+  const [formData, setFormData] = useState({
+    name: student?.name || '',
+    phone: student?.phone || '+254 700 000 000',
+    email: student?.email || 'placeholder@students.uonbi.ac.ke',
+    reg: student?.reg || '',
+    year: student?.year || '2'
+  });
 
-  // Function to handle the actual suspension logic
-  const handleSuspendConfirm = (reason) => {
-    console.log(`Suspending ${student.name} because: ${reason}`);
-    setIsSuspendModalOpen(false); // Close the modal
-    // TODO: Add your API call here to update the database
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  return (
-    <div className="w-full flex flex-col items-center">
+  // Exact Status Badge from your mockup
+  const renderStatus = (status) => {
+    if (status === "Active") return <span className="px-5 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-extrabold tracking-wide">Active</span>;
+    if (status === "Pending") return <span className="px-5 py-1 rounded-full border border-yellow-400 text-yellow-600 bg-yellow-50 text-xs font-extrabold tracking-wide">Pending</span>;
+    return <span className="px-5 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-extrabold tracking-wide">{status}</span>;
+  };
+
+  // --- 1. THE SAVE WORKHORSE ---
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
       
-      {/* --- DROP THE MODAL HERE --- */}
+      const response = await fetch(`http://127.0.0.1:5000/api/users/update/${student.id}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Student details updated successfully!");
+      } else {
+        toast.error(data.message || "Failed to update details.");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Could not connect to the server.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- 2. THE SUSPEND WORKHORSE ---
+  const handleSuspendConfirm = async (reason) => {
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`http://127.0.0.1:5000/api/users/suspend/${student.id}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ reason: reason })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.error(`Account suspended: ${student.name}`); // Red toast for suspension
+        setIsSuspendModalOpen(false);
+        
+        // Refresh the local view or go back to registry to show the new status
+        setTimeout(() => onBack(), 1500); 
+      } else {
+        toast.warning(data.message || "Suspension failed.");
+      }
+    } catch (error) {
+      toast.error("Connection error. Could not suspend account.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+
+  return (
+    <div className="w-full max-w-6xl mx-auto py-2">
+      
+      {/* THE MODAL */}
       <SuspendAccountModal 
         isOpen={isSuspendModalOpen} 
-        onClose={() => setIsSuspendModalOpen(false)}
+        onClose={() => !isProcessing && setIsSuspendModalOpen(false)}
         onConfirm={handleSuspendConfirm}
         studentName={student.name}
       />
 
-      {/* Header Area */}
-      <div className="w-full flex items-center justify-center relative mb-8">
+      {/* --- HEADER --- */}
+      <div className="relative flex items-center justify-between mb-8">
         <button
           onClick={onBack}
-          className="absolute left-0 flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl font-bold text-white text-sm shadow-sm hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity z-10"
           style={{ backgroundColor: BRAND }}
         >
-          <FiArrowLeft size={18} strokeWidth={3} />
-          <span className="hidden sm:inline">Back to students</span>
-          <span className="sm:hidden">Back</span>
+          <FiArrowLeft size={20} strokeWidth={3} />
+          Back to students
         </button>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-center" style={{ color: BRAND }}>
-          Student Details
-        </h2>
+
+        <div className="absolute left-0 right-0 text-center pointer-events-none">
+          <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: BRAND }}>
+            Student Details
+          </h2>
+        </div>
       </div>
 
-      {/* Main Layout: Two Columns on Desktop */}
-      <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
+      {/* --- MAIN GRID LAYOUT --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        {/* --- LEFT COLUMN --- */}
-        <div className="flex flex-col gap-6 w-full lg:w-[350px] flex-shrink-0">
+        {/* LEFT COLUMN (Profile & Security) */}
+        <div className="flex flex-col gap-6 lg:col-span-1">
           
-          {/* Profile Card */}
-          <div className="bg-white border-[1.5px] rounded-2xl p-6 flex flex-col items-center shadow-sm" style={{ borderColor: BRAND }}>
-            {/* ... Profile Card content remains exactly the same ... */}
-            <div className="w-24 h-24 bg-gray-500 rounded-full flex items-center justify-center text-white mb-4">
-              <FiUser size={50} />
+          {/* Card 1: Profile Summary */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200 flex flex-col items-center">
+            <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-4" style={{ backgroundColor: BRAND }}>
+              <FiUser size={50} className="text-white" />
             </div>
-            <h3 className="text-xl font-extrabold text-gray-800 mb-1">{student.name}</h3>
-            <p className="text-sm font-bold text-gray-500 mb-3">{student.reg}</p>
-            <StatusBadge status={student.status} />
-            <div className="w-full border-t-[2px] border-dashed border-gray-300 my-6"></div>
-            <div className="w-full flex flex-col gap-1.5 text-[13px] font-bold text-gray-900">
-              <p>Year : <span className="font-semibold text-gray-600">{student.year}</span></p>
-              <p>Phone Number : <span className="font-semibold text-gray-600">{phone}</span></p>
-              <p className="truncate">Email : <span className="font-semibold text-blue-600">{email}</span></p>
+            
+            <h3 className="text-xl font-extrabold text-gray-800 mb-2 text-center">{student.name}</h3>
+            {renderStatus(student.status)}
+            
+            <hr className="w-full border-dashed border-gray-300 my-6" />
+            
+            <div className="w-full flex flex-col gap-2 text-sm">
+              <p><span className="font-extrabold text-gray-900">Reg No :</span> <span className="text-gray-600 font-medium">{student.reg}</span></p>
+              <p><span className="font-extrabold text-gray-900">Year :</span> <span className="text-gray-600 font-medium">{formData.year}</span></p>
+              <p><span className="font-extrabold text-gray-900">Phone :</span> <span className="text-gray-600 font-medium">{formData.phone}</span></p>
+              <p className="truncate"><span className="font-extrabold text-gray-900">Email :</span> <span className="text-blue-600 font-medium">{formData.email}</span></p>
             </div>
           </div>
 
-          {/* Security & Access Card */}
-          <div className="bg-white border-[1.5px] rounded-2xl p-6 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
-            {/* ... Security content remains exactly the same ... */}
-            <h4 className="font-bold text-[16px] mb-2" style={{ color: BRAND }}>Security & Access</h4>
-            <p className="text-sm font-medium text-gray-600 mb-6">Send a secure password reset link to the user's email address.</p>
-            <button className="self-end px-5 py-2.5 rounded-xl font-bold text-sm border-[1.5px] hover:bg-blue-50 transition-colors" style={{ borderColor: BRAND, color: BRAND }}>Send Password Reset</button>
+          {/* Card 3: Security & Access */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200">
+            <h3 className="text-lg font-bold mb-2" style={{ color: BRAND }}>Security & Access</h3>
+            <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
+              Send a secure password reset link to the student's email address.
+            </p>
+            <div className="flex justify-end">
+              <button 
+                className="px-5 py-2.5 rounded-xl font-bold border-2 bg-white transition-colors hover:bg-blue-50"
+                style={{ borderColor: BRAND, color: BRAND }}
+              >
+                Send Password Reset
+              </button>
+            </div>
           </div>
-
         </div>
 
-        {/* --- RIGHT COLUMN --- */}
-        <div className="flex flex-col gap-6 flex-1 w-full">
+        {/* RIGHT COLUMN (Edit Form & Suspend) */}
+        <div className="flex flex-col gap-6 lg:col-span-2">
           
-          {/* Edit Account Details Form */}
-          <div className="bg-white border-[1.5px] rounded-2xl p-6 md:p-8 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
-             {/* ... Form content remains exactly the same ... */}
-             <h4 className="font-bold text-lg text-center mb-6" style={{ color: BRAND }}>Edit Account Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
-              {/* Full Name */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-gray-500">Full Name</label>
-                <div className="flex items-center gap-3 border border-gray-400 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:border-blue-500 transition-colors">
-                  <FiUser size={18} className="text-gray-500 flex-shrink-0" />
-                  <input type="text" defaultValue={student.name} className="flex-1 text-sm text-gray-700 bg-transparent outline-none w-full" />
+          {/* Card 2: Edit Account Details */}
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-blue-200">
+            <h3 className="text-xl font-bold mb-8 text-center" style={{ color: BRAND }}>Edit Account Details</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div>
+                <label className="text-sm font-bold text-gray-500 ml-1 mb-2 block">Full Name</label>
+                <div className="relative">
+                  <FiUser className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] font-medium" />
                 </div>
               </div>
 
-              {/* Phone Number */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-gray-500">Phone Number</label>
-                <div className="flex items-center gap-3 border border-gray-400 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:border-blue-500 transition-colors">
-                  <FiPhone size={18} className="text-gray-500 flex-shrink-0" />
-                  <input type="text" defaultValue={phone} className="flex-1 text-sm text-gray-700 bg-transparent outline-none w-full" />
+              <div>
+                <label className="text-sm font-bold text-gray-500 ml-1 mb-2 block">Registration Number</label>
+                <div className="relative">
+                  <FiHash className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input type="text" name="reg" value={formData.reg} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] font-medium" />
                 </div>
               </div>
 
-              {/* Email Address */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-gray-500">Email Address</label>
-                <div className="flex items-center gap-3 border border-gray-400 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:border-blue-500 transition-colors">
-                  <FiMail size={18} className="text-gray-500 flex-shrink-0" />
-                  <input type="email" defaultValue={email} className="flex-1 text-sm text-gray-700 bg-transparent outline-none w-full" />
+              <div>
+                <label className="text-sm font-bold text-gray-500 ml-1 mb-2 block">Email Address</label>
+                <div className="relative">
+                  <FiMail className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] font-medium" />
                 </div>
               </div>
 
-              {/* Registration Number */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-gray-500">Registration Number</label>
-                <div className="flex items-center gap-3 border border-gray-400 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:border-blue-500 transition-colors">
-                  <FiHash size={18} className="text-gray-500 flex-shrink-0" />
-                  <input type="text" defaultValue={student.reg} className="flex-1 text-sm text-gray-700 bg-transparent outline-none w-full" />
+              <div>
+                <label className="text-sm font-bold text-gray-500 ml-1 mb-2 block">Phone Number</label>
+                <div className="relative">
+                  <FiPhone className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] font-medium" />
                 </div>
               </div>
 
-              {/* Year */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-gray-500">Year</label>
-                <div className="flex items-center gap-3 border border-gray-400 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:border-blue-500 transition-colors">
-                  <FiHash size={18} className="text-gray-500 flex-shrink-0" />
-                  <select defaultValue={student.year} className="flex-1 text-sm text-gray-700 bg-transparent outline-none w-full appearance-none cursor-pointer">
-                    <option value="2">2</option>
-                    <option value="4">4</option>
+              <div>
+                <label className="text-sm font-bold text-gray-500 ml-1 mb-2 block">Academic Year</label>
+                <div className="relative">
+                  <FiHash className="absolute left-4 top-3.5 text-gray-400 z-10" size={18} />
+                  <select name="year" value={formData.year} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-11 pr-10 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] font-medium appearance-none cursor-pointer relative">
+                    <option value="2">Year 2</option>
+                    <option value="4">Year 4</option>
                   </select>
-                  <FiChevronDown size={18} className="text-gray-500 flex-shrink-0" />
+                  <FiChevronDown className="absolute right-4 top-3.5 text-gray-400 pointer-events-none" size={18} />
                 </div>
               </div>
 
-              {/* Save Button */}
-              <div className="flex flex-col gap-1.5 justify-end">
-                <button className="w-full py-3 rounded-xl font-bold text-white text-sm shadow-sm hover:opacity-90 transition-opacity mt-[22px]" style={{ backgroundColor: BRAND }}>
-                  Save Changes
+              {/* SAVE BUTTON */}
+              <div className="flex items-end">
+                <button 
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  className="w-full py-3 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: isSaving ? "" : BRAND }}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
+
             </div>
           </div>
 
-          {/* Suspend Account Card */}
-          <div className="bg-[#fffdfd] border-[1.5px] border-red-500 rounded-2xl p-6 flex flex-col shadow-sm">
-            <h4 className="font-bold text-[16px] text-red-600 mb-2">Suspend Account</h4>
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <p className="text-sm font-medium text-gray-600 flex-1 leading-relaxed">
+          {/* Card 4: Suspend Account */}
+          <div className="bg-[#fffdfd] rounded-2xl p-6 md:p-8 shadow-sm border border-red-500">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Suspend Account</h3>
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+              <p className="text-sm text-gray-600 font-medium leading-relaxed md:w-2/3">
                 Suspending this account will immediately revoke the student's login access. Their project data will remain in the database, but they will not be able to interact with the system.
               </p>
+              {/* SUSPEND BUTTON */}
               <button 
-                // --- TRIGGER MODAL OPEN HERE ---
                 onClick={() => setIsSuspendModalOpen(true)}
-                className="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors whitespace-nowrap"
+                className="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md whitespace-nowrap"
               >
                 Suspend Account
               </button>

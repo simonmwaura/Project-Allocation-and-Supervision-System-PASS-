@@ -55,6 +55,10 @@ const StudentDashboardView = ({ students }) => {
   const [isYearOpen, setIsYearOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   
+  const totalStudents = students.length;
+  const activeStudents = students.filter(s => s.status === "Active").length;
+  const pendingStudents = students.filter(s => s.status === "Pending").length;
+  const suspendedStudents = students.filter(s => s.status === "Suspended").length;
   // This state tells React whether to show the Dashboard OR the Details view
   const [selectedStudent, setSelectedStudent] = useState(null); 
 
@@ -70,7 +74,7 @@ const StudentDashboardView = ({ students }) => {
   }, [students, searchQuery, yearFilter, statusFilter]);
 
   // IF A STUDENT IS SELECTED, LOAD THE NEW COMPONENT
-  if (selectedStudent) {
+if (selectedStudent) {
       return (
           <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
               <StudentAccountDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
@@ -80,22 +84,19 @@ const StudentDashboardView = ({ students }) => {
 
   // OTHERWISE SHOW THE DASHBOARD
   return (
-    <div 
-      className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col items-center shadow-sm"
-      style={{ borderColor: BRAND }}
-    >
+    <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col items-center shadow-sm" style={{ borderColor: BRAND }}>
       <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-8 sm:mb-10" style={{ color: BRAND }}>
         Student Account Management
       </h2>
 
-      {/* 1. Metric Cards Grid */}
+      {/* 1. Metric Cards Grid (UPDATED WITH DYNAMIC VALUES) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">
-        <MetricCard icon={FiUsers} title="Total Students" value="102" color={BRAND} bgClass="bg-blue-50/30" />
-        <MetricCard icon={FiUserCheck} title="Active Accounts" value="56" color="#16a34a" bgClass="bg-green-50/50" />
-        <MetricCard icon={FiUserMinus} title="Pending Activation" value="34" color="#eab308" textColor="#334155" bgClass="bg-yellow-50/50" />
-        <MetricCard icon={FiUserX} title="Suspended" value="15" color="#ef4444" bgClass="bg-red-50/50" />
+        <MetricCard icon={FiUsers} title="Total Students" value={totalStudents} color={BRAND} bgClass="bg-blue-50/30" />
+        <MetricCard icon={FiUserCheck} title="Active Accounts" value={activeStudents} color="#16a34a" bgClass="bg-green-50/50" />
+        <MetricCard icon={FiUserMinus} title="Pending Activation" value={pendingStudents} color="#eab308" textColor="#334155" bgClass="bg-yellow-50/50" />
+        <MetricCard icon={FiUserX} title="Suspended" value={suspendedStudents} color="#ef4444" bgClass="bg-red-50/50" />
       </div>
-
+      
       {/* 2. Filter & Search Bar */}
       <div className="flex flex-col lg:flex-row gap-4 w-full max-w-5xl mb-8">
         <div className="flex-1 flex items-center gap-3 px-5 py-3 border-[1.5px] border-gray-300 rounded-full shadow-sm bg-white focus-within:border-[#2b20d6] transition-colors">

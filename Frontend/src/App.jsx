@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react'; // Added these
 
 // Temporary Page
-import Home from './Home';
+import LandingPage from './LandingPage/LandingPage';
 
 // Student Routes (Keep your existing imports)
 import StudentLayout from './Student Pages/Student Components/StudentLayout';
@@ -29,6 +29,7 @@ import ManageFaculty from './Administrator Pages/ManageFaculty';
 import ImportData from './Administrator Pages/ImportData';
 import AdministratorProfile from './Administrator Pages/AdministratorProfile';
 import ManageStudents from './Administrator Pages/ManageStudents';
+import FacultyDetails from './Administrator Pages/Manage Faculty Components/FacultyDetails';
 
 
 // --- NEW: The Supervisor Wrapper Component ---
@@ -73,7 +74,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
 
         {/* Student Routes */}
         <Route path="/student" element={<StudentLayout />}>
@@ -99,6 +100,7 @@ function App() {
         <Route path="/administrator" element={<AdministratorLayout />}>
           <Route path="dashboard" element={<AdministratorDashboard />} />
           <Route path="managefaculty" element={<ManageFaculty />} />
+          <Route path="managefaculty/:id" element={<FacultyDetails />} />
           <Route path="dataimport" element={<ImportData />} />
           <Route path="managestudents" element={<ManageStudents />} />
           <Route path="profile" element={<AdministratorProfile />} />

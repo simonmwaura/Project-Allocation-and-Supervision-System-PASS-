@@ -1,4 +1,4 @@
-from models import db,datetime
+from models import db, datetime
 
 class Project_Pitch(db.Model):
     __tablename__ = 'project_pitch'
@@ -12,6 +12,10 @@ class Project_Pitch(db.Model):
     decline_reason = db.Column(db.String(255), nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('student_id', 'supervisor_id', name='unique_student_supervisor_pitch'),
+    )
 
     # Relationships
     student = db.relationship('Student', back_populates='pitches')

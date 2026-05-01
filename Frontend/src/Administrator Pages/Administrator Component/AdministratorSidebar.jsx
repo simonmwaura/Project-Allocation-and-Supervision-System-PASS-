@@ -1,11 +1,27 @@
 import { FiGrid, FiUsers, FiUpload, FiUser, FiLogOut, FiX } from "react-icons/fi";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // <-- ADDED useNavigate
+import { toast } from "react-toastify"; // <-- ADDED toast for smooth UX
 
 const BRAND = "#2b20d6";
 
 const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate(); // <-- INITIALIZED navigate
+
   const isActive = (path) => location.pathname === path;
+
+  // --- NEW: Logout Handler ---
+  const handleLogout = () => {
+    // 1. Clear the authentication data from the browser
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_role");
+
+    // 2. Optional: Show a goodbye message
+    toast.info("Logged out successfully.");
+
+    // 3. Redirect the user back to the Landing/Login page
+    navigate("/");
+  };
 
   return (
     <>
@@ -78,8 +94,10 @@ const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
             Profile
           </Link>
 
+          {/* --- UPDATED: Attached the handleLogout function to the button --- */}
           <button
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors hover:bg-red-50 hover:text-red-600"
             style={{ color: BRAND }}
           >
             <FiLogOut size={20} />

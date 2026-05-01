@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PASS - Data & Account Management</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8faff; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 40px 0; }
+        .container { background: white; width: 600px; padding: 40px; border-radius: 12px; border: 1px solid #dbe4ff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+        h1 { color: #3b42c4; margin-bottom: 10px; font-size: 24px; }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+        
+        .section-card { border: 1px solid #dbe4ff; border-radius: 8px; padding: 20px; margin-bottom: 25px; background: #fff; transition: 0.2s; }
+        .admin-theme { border-left: 5px solid #3b42c4; }
+        .student-theme { border-left: 5px solid #2ecc71; }
+        .danger-theme { border-left: 5px solid #e74c3c; }
+
+        h2 { font-size: 18px; margin-top: 0; text-align: left; }
+        .admin-theme h2 { color: #3b42c4; }
+        .student-theme h2 { color: #2ecc71; }
+        .danger-theme h2 { color: #e74c3c; }
+
+        .label { display: block; text-align: left; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
+        select, input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        
+        .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 25px; background: #f9f9f9; margin-bottom: 15px; cursor: pointer; }
+        .drop-zone:hover { border-color: #3b42c4; background: #f0f3ff; }
+
+        .btn { color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px; margin-bottom: 5px; }
+        .btn-admin { background: #3b42c4; }
+        .btn-student { background: #2ecc71; }
+        .btn-danger { background: #e74c3c; }
+        .btn-logout { background: #95a5a6; margin-top: 10px; }
+        .btn:hover { opacity: 0.9; }
+
+        #status { margin-top: 20px; font-size: 13px; text-align: left; background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; display: none; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>PASS Management Portal</h1>
+    <p class="subtitle">Project Allocation and Supervision System</p>
+    
+    <!-- 1. AUTHENTICATION & PROFILE -->
+    <div class="section-card">
+        <label class="label">Active JWT Token</label>
+        <input type="text" id="token" placeholder="Paste token here...">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-admin" style="width: 70%;" onclick="checkProfile()">Check Current Profile</button>
+            <button class="btn btn-logout" style="width: 30%;" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- 2. STUDENT SELF-SERVICE -->
+    <div class="section-card student-theme">
+        <h2>Student Settings</h2>
+        
+        <label class="label">New Phone Number</label>
+        <input type="text" id="new_phone" placeholder="e.g. +254712345678">
+        <button class="btn btn-student" onclick="updatePhone()">Update Phone Number</button>
+        
+        <div style="margin-top: 15px;">
+            <label class="label">New Password</label>
+            <input type="password" id="new_password" placeholder="At least 8 characters">
+            <button class="btn btn-student" onclick="changePassword()">Change Password</button>
+        </div>
+    </div>
+
+    <!-- 3. ADMIN: IMPORT DATA -->
+    <div class="section-card admin-theme">
+        <h2>Admin: Bulk Import</h2>
+        <label class="label">Data Target</label>
+        <select id="upload_type">
+            <option value="Supervisors_CSV">Supervisors CSV</option>
+            <option value="2nd Year CSV">2nd Year Students (UoN)</option>
+            <option value="4th Year CSV">4th Year Students (UoN)</option>
+        </select>
+
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <div style="font-size: 30px; color: #999;">📄+</div>
+            <p id="fileName" style="font-size: 12px; color: #666;">Click to select .CSV file</p>
+            <input type="file" id="fileInput" style="display: none;" accept=".csv">
+        </div>
+        <button class="btn btn-admin" onclick="handleUpload()">Upload & Process CSV</button>
+    </div>
+
+    <!-- 4. ADMIN: DELETE ACCOUNT -->
+    <div class="section-card danger-theme">
+        <h2>Admin: Account Deletion</h2>
+        <label class="label">User ID</label>
+        <input type="text" id="delete_user_id" placeholder="User ID to remove">
+        <label class="label">Reason</label>
+        <textarea id="delete_reason" style="height: 60px;" placeholder="Detailed reason (min 10 characters)"></textarea>
+        <button class="btn btn-danger" onclick="handleDelete()">Permanently Delete Account</button>
+    </div>
+
+    <pre id="status"></pre>
+</div>
+
+<script>
+    // --- Helper: Get Token ---
+    const getHeaders = () => {
+        const token = document.getElementById('token').value.replace("Bearer ", "").trim();
+        return {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        };
+    };
+
+    const updateStatus = (data, isError = false) => {
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.display = "block";
+        statusDiv.innerText = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        statusDiv.style.borderLeft = isError ? "5px solid #e74c3c" : "5px solid #2ecc71";
+    };
+
+    // --- Logout ---
+    function logout() {
+        document.getElementById('token').value = "";
+        updateStatus("Logged out locally. Token cleared.");
+    }
+
+    // --- Profile Checker ---
+    async function checkProfile() {
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/students/me", { headers: getHeaders() });
+            const result = await response.json();
+            updateStatus(result, !response.ok);
+        } catch (e) { updateStatus(e.message, true); }
+    }
+
+    // --- Student: Phone Update ---
+    async function updatePhone() {
+        const phone = document.getElementById('new_phone').value;
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/students/me/phone", {
+                method: "PATCH",
+                headers: getHeaders(),
+                body: JSON.stringify({ phone_number: phone })
+            });
+            updateStatus(await response.json(), !response.ok);
+        } catch (e) { updateStatus(e.message, true); }
+    }
+
+    // --- Student: Password Change ---
+    async function changePassword() {
+        const pass = document.getElementById('new_password').value;
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/students/me/change-password", {
+                method: "PATCH",
+                headers: getHeaders(),
+                body: JSON.stringify({ new_password: pass })
+            });
+            updateStatus(await response.json(), !response.ok);
+        } catch (e) { updateStatus(e.message, true); }
+    }
+
+    // --- Admin: Upload ---
+    document.getElementById('fileInput').onchange = function() {
+        if(this.files[0]) document.getElementById('fileName').innerText = this.files[0].name;
+    };
+
+    async function handleUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const uploadType = document.getElementById('upload_type').value;
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_type', uploadType);
+        if (uploadType.includes("2nd")) formData.append('year', '2');
+        if (uploadType.includes("4th")) formData.append('year', '4');
+
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/admin/upload-csv", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${document.getElementById('token').value.trim()}` },
+                body: formData
+            });
+            updateStatus(await response.json(), !response.ok);
+        } catch (e) { updateStatus(e.message, true); }
+    }
+
+    // --- Admin: Delete ---
+    async function handleDelete() {
+        const userId = document.getElementById('delete_user_id').value;
+        const reason = document.getElementById('delete_reason').value;
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/admin/users/${userId}`, {
+                method: "DELETE",
+                headers: getHeaders(),
+                body: JSON.stringify({ reason: reason })
+            });
+            updateStatus(await response.json(), !response.ok);
+        } catch (e) { updateStatus(e.message, true); }
+    }
+</script>
+</body>
+</html>

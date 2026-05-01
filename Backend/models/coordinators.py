@@ -9,4 +9,3 @@ class Coordinator(db.Model):
     # Relationships
     coordinator_supervisor = db.relationship('Supervisor', back_populates='coordinator_profile')
     broadcasts = db.relationship('Broadcast', back_populates='author')
-    panels = db.relationship('Panel', back_populates='created_by')

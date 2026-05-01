@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Google Login</title>
+    <!-- Load Google's Identity Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body style="padding: 50px; font-family: sans-serif;">
+    <h2>1. Login to get the JWT</h2>
+    
+    <div id="g_id_onload"
+         data-client_id="1007402569571-7s9h5cb32gfkf4atjpp5svgpt8tnalmr.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <h3 style="margin-top: 20px;">Login Response (The Wristband):</h3>
+    <pre id="output" style="background: #f4f4f4; padding: 15px; border-radius: 5px;"></pre>
+
+    <hr style="margin: 40px 0;">
+
+    <h2>2. Test a Protected Route</h2>
+    <p>Now that we have the token, let's use it to fetch the user profile from Flask.</p>
+    <button onclick="getProfile()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+        Get My Profile
+    </button>
+
+    <h3 style="margin-top: 20px;">Profile Response:</h3>
+    <pre id="profile-output" style="background: #e8f4f8; padding: 15px; border-radius: 5px;"></pre>
+
+    <script>
+        // We will store our JWT in this variable once we log in
+        let myJWT = null;
+
+        function handleCredentialResponse(response) {
+            document.getElementById('output').innerText = "Verifying with Flask...";
+
+            fetch("http://127.0.0.1:5000/api/users/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: response.credential })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+                
+                // SAVE THE JWT!
+                if (data.access_token) {
+                    myJWT = data.access_token;
+                    console.log("JWT Saved to memory!");
+                }
+            })
+            .catch(err => {
+                document.getElementById('output').innerText = "Error: " + err;
+            });
+        }
+
+        // This function uses the JWT to access the protected route
+        function getProfile() {
+            if (!myJWT) {
+                alert("You need to log in first to get a JWT!");
+                return;
+            }
+
+            document.getElementById('profile-output').innerText = "Fetching protected data...";
+
+            fetch("http://127.0.0.1:5000/api/users/profile", {
+                method: "GET",
+                headers: { 
+                    "Content-Type": "application/json",
+                    // THIS IS THE MAGIC LINE:
+                    "Authorization": "Bearer " + myJWT 
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('profile-output').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(err => {
+                document.getElementById('profile-output').innerText = "Error: " + err;
+            });
+        }
+    </script>
+</body>
+</html>

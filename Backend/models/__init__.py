@@ -18,4 +18,5 @@ from .supervisor_interests import Supervisor_Interest
 from .supervisors import Supervisor
 from .upload_logs import Upload_log
 from .users import User
+from .deletion_logs import AccountDeletionLog
 
