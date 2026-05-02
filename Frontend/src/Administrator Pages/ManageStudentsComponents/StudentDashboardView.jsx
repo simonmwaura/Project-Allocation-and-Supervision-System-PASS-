@@ -59,6 +59,7 @@ const StudentDashboardView = ({ students }) => {
   const activeStudents = students.filter(s => s.status === "Active").length;
   const pendingStudents = students.filter(s => s.status === "Pending").length;
   const suspendedStudents = students.filter(s => s.status === "Suspended").length;
+  
   // This state tells React whether to show the Dashboard OR the Details view
   const [selectedStudent, setSelectedStudent] = useState(null); 
 
@@ -74,7 +75,7 @@ const StudentDashboardView = ({ students }) => {
   }, [students, searchQuery, yearFilter, statusFilter]);
 
   // IF A STUDENT IS SELECTED, LOAD THE NEW COMPONENT
-if (selectedStudent) {
+  if (selectedStudent) {
       return (
           <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
               <StudentAccountDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
@@ -89,7 +90,7 @@ if (selectedStudent) {
         Student Account Management
       </h2>
 
-      {/* 1. Metric Cards Grid (UPDATED WITH DYNAMIC VALUES) */}
+      {/* 1. Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">
         <MetricCard icon={FiUsers} title="Total Students" value={totalStudents} color={BRAND} bgClass="bg-blue-50/30" />
         <MetricCard icon={FiUserCheck} title="Active Accounts" value={activeStudents} color="#16a34a" bgClass="bg-green-50/50" />
@@ -185,16 +186,15 @@ if (selectedStudent) {
                       <StatusBadge status={row.status} />
                     </td>
                     <td className="border-[1.5px] p-3 text-center" style={{ borderColor: BRAND }}>
+                      
+                      {/* --- FIX: Updated Button Logic & Styling --- */}
                       <button 
-                        // HERE IS THE LINK! THIS OPENS THE NEW COMPONENT
-                        onClick={() => setSelectedStudent(row)} 
-                        className={`px-5 sm:px-6 py-1.5 rounded-md font-bold text-[12px] sm:text-[13px] border-[1.5px] transition-opacity whitespace-nowrap ${
-                          row.status === "Active" ? "bg-[#2b20d6] text-white hover:opacity-90" : "bg-white hover:bg-blue-50"
-                        }`}
-                        style={row.status === "Pending" ? { borderColor: BRAND, color: BRAND } : { borderColor: BRAND }}
+                        onClick={() => setSelectedStudent(row)}
+                        className="px-4 py-2 rounded-lg border-2 border-[#2b20d6] text-[#2b20d6] font-bold text-sm hover:bg-[#2b20d6] hover:text-white transition-all"
                       >
                         View Details
                       </button>
+
                     </td>
                   </tr>
                 ))

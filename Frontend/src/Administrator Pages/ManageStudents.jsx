@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify'; // <-- Make sure to import this
+import { toast } from 'react-toastify'; 
 import NoStudentFound from './ManageStudentsComponents/NoStudentFound'; 
 import StudentDashboardView from './ManageStudentsComponents/StudentDashboardView'; 
 
@@ -24,17 +24,21 @@ export default function ManageStudents() {
 
         const data = await response.json();
 
-        if (response.ok) {
-          // Map the database fields to match the React component's expected format
+        if (response.ok && data.data && Array.isArray(data.data)) {
+          // Map the database fields perfectly
           const formattedStudents = data.data.map(user => ({
-            id: user.user_id,
-            name: `${user.first_name} ${user.last_name}`,
+            id: user.id || user.user_id,
+            name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
             email: user.email,
-            phone: user.phone_number,
-            // If your DB doesn't have reg/year yet, these provide safe fallbacks
-            reg: user.reg_number || "Not Assigned", 
-            year: user.academic_year || 2,
-            status: user.status === 'Accepted' ? 'Active' : user.status 
+            phone: user.phone || user.phone_number,
+            
+            // Using the precise keys from your Flask backend
+            reg: user.reg || user.registration_number || "Not Set", 
+            year: user.year || "2",
+      
+            // FIX: Changed 'student' to 'user' to match the map parameter
+            status: user.status === 'Accepted' ? 'Active' : user.status,
+            suspension_reason: user.suspension_reason
           }));
           
           setStudents(formattedStudents);

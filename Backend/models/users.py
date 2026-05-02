@@ -11,6 +11,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=True)
     user_role = db.Column(db.Enum('Student', 'Supervisor', 'Administrator', 'Coordinator', name='role_types'), nullable=False)
     account_status = db.Column(db.Enum('Pending', 'Accepted', 'Suspended', name='status_types'), default='Pending', nullable=False)
+    suspension_reason = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

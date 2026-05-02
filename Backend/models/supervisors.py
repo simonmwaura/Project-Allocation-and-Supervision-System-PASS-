@@ -4,8 +4,8 @@ class Supervisor(db.Model):
     __tablename__ = "supervisor"
     supervisor_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"), unique=True)
-    max_2nd_year_capacity = db.Column(db.Integer, nullable=False)
-    max_4th_year_capacity = db.Column(db.Integer, nullable=False)
+    max_2nd_year_capacity = db.Column(db.Integer, nullable=False, default=0)
+    max_4th_year_capacity = db.Column(db.Integer, nullable=False, default=0)
 
     # Relationships
     supervisor_user = db.relationship('User', back_populates="supervisors")

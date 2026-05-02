@@ -6,7 +6,7 @@ class Student(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), unique=True)
     cycle_id = db.Column(db.Integer, db.ForeignKey("academic_cycle.cycle_id"))
     assigned_supervisor_id = db.Column(db.Integer, db.ForeignKey('supervisor.supervisor_id'), nullable=True)
-    registration_number = db.Column(db.String(15), nullable=False)
+    registration_number = db.Column(db.String(17), nullable=False)
     year = db.Column(db.Enum('2', '4', name="year_levels"), nullable=False)
 
     # Relationships

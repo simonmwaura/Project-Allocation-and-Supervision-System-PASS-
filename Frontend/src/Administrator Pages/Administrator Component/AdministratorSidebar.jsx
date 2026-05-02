@@ -1,25 +1,19 @@
-import { FiGrid, FiUsers, FiUpload, FiUser, FiLogOut, FiX } from "react-icons/fi";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // <-- ADDED useNavigate
-import { toast } from "react-toastify"; // <-- ADDED toast for smooth UX
+import { FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiX } from "react-icons/fi";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const BRAND = "#2b20d6";
 
 const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate(); // <-- INITIALIZED navigate
+  const navigate = useNavigate();
 
   const isActive = (path) => location.pathname === path;
 
-  // --- NEW: Logout Handler ---
   const handleLogout = () => {
-    // 1. Clear the authentication data from the browser
     localStorage.removeItem("token");
     localStorage.removeItem("user_role");
-
-    // 2. Optional: Show a goodbye message
     toast.info("Logged out successfully.");
-
-    // 3. Redirect the user back to the Landing/Login page
     navigate("/");
   };
 
@@ -45,7 +39,7 @@ const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
 
         <div className="text-center mb-8" style={{ color: BRAND }}>
           <div className="text-4xl font-bold tracking-wide">PASS</div>
-          <div className="text-sm font-semibold">Administrator Portal</div>
+          <div className="text-sm font-semibold">Admin Portal</div>
         </div>
 
         <nav className="flex flex-col gap-2">
@@ -76,14 +70,17 @@ const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
             Manage Students
           </Link>
 
+          {/* --- UPDATED: Matches the "Data Management" mockup --- */}
           <Link
             to="/administrator/dataimport"
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
             style={isActive("/administrator/dataimport") ? { background: BRAND, color: "#fff" } : { color: BRAND }}
           >
-            <FiUpload size={20} />
-            Import Data
+            <FiFileText size={20} />
+            Data Management
           </Link>
+
+          <div className="my-4 border-b border-gray-200"></div>
 
           <Link
             to="/administrator/profile"
@@ -94,7 +91,6 @@ const AdministratorSidebar = ({ isOpen, setIsOpen }) => {
             Profile
           </Link>
 
-          {/* --- UPDATED: Attached the handleLogout function to the button --- */}
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors hover:bg-red-50 hover:text-red-600"

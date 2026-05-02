@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiUser, FiMail, FiPhone } from 'react-icons/fi';
-import { toast } from 'react-toastify'; // <-- ADDED TOAST
+import SuspendAccountModal from '../ManageStudentsComponents/SuspendAccountModal';
+import UnsuspendAccountModal from '../ManageStudentsComponents/UnsuspendAccountModal';
+import { toast } from 'react-toastify'; 
 
 const BRAND = "#2b20d6";
 
@@ -9,17 +11,31 @@ const FacultyDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Retrieves the data we passed from the table button
   const facultyMember = location.state?.facultyData;
 
+  // --- BULLETPROOF ID CATCHER ---
+  const targetId = facultyMember?.id || facultyMember?.user_id;
+
+  // Keep track of their status and reason (Must be declared AFTER facultyMember)
+  const status = facultyMember?.status; 
+  const suspensionReason = facultyMember?.suspension_reason;
+
   // --- STATES ---
-  const [isSaving, setIsSaving] = useState(false); // Controls the Save button
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
+  const [isUnsuspendModalOpen, setIsUnsuspendModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); 
+  const [isSaving, setIsSaving] = useState(false);         
+
+  // Local state for the Edit Form
   const [formData, setFormData] = useState({
     name: facultyMember?.name || '',
-    email: 'placeholder@uonbi.ac.ke', 
-    phone: '+254 700 000 000'         
+    email: facultyMember?.email || 'placeholder@uonbi.ac.ke', 
+    phone: facultyMember?.phone || '+254 700 000 000'         
   });
 
-  if (!facultyMember) {
+  // Fallback if accessed directly without data
+  if (!facultyMember || !targetId) {
     return (
       <div className="w-full min-h-[75vh] flex flex-col items-center justify-center">
         <p className="text-gray-500 font-bold mb-4">Faculty details not found in memory.</p>
@@ -33,23 +49,23 @@ const FacultyDetails = () => {
     );
   }
 
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const renderStatus = (status) => {
     if (status === "Active") return <span className="px-5 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-extrabold tracking-wide">Active</span>;
     if (status === "Pending") return <span className="px-5 py-1 rounded-full border border-yellow-400 text-yellow-600 bg-yellow-50 text-xs font-extrabold tracking-wide">Pending</span>;
     return <span className="px-5 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-extrabold tracking-wide">{status}</span>;
   };
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // --- THE WORKHORSE: SAVE FACULTY CHANGES ---
+  // --- 1. THE SAVE WORKHORSE ---
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`http://127.0.0.1:5000/api/users/update/${facultyMember.id}`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/users/update/${targetId}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -61,21 +77,94 @@ const FacultyDetails = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Faculty details updated successfully!");
+        toast.success("Supervisor details updated successfully!");
       } else {
         toast.error(data.message || "Failed to update details.");
       }
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("Could not connect to the server.");
+      toast.error("Connection error: Could not reach the server.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // --- 2. THE SUSPEND WORKHORSE ---
+  const handleSuspendConfirm = async (reason) => {
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`http://127.0.0.1:5000/api/users/suspend/${targetId}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ reason: reason })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.error(`Account suspended: ${formData.name}`); 
+        setIsSuspendModalOpen(false);
+        setTimeout(() => navigate('/administrator/managefaculty'), 1500); 
+      } else {
+        toast.warning(data.message || "Suspension failed.");
+      }
+    } catch (error) {
+      toast.error("Connection error: Could not suspend account.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 3. THE RESTORE WORKHORSE ---
+  const handleUnsuspendConfirm = async () => {
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://127.0.0.1:5000/api/users/unsuspend/${targetId}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`Account restored: ${formData.name}`); 
+        setIsUnsuspendModalOpen(false);
+        setTimeout(() => navigate('/administrator/managefaculty'), 1500); 
+      } else {
+        toast.error(data.message || "Failed to restore account.");
+      }
+    } catch (error) {
+      toast.error("Connection error: Could not restore account.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
       
+      {/* THE MODALS */}
+      <SuspendAccountModal 
+        isOpen={isSuspendModalOpen} 
+        onClose={() => !isProcessing && setIsSuspendModalOpen(false)}
+        onConfirm={handleSuspendConfirm}
+        studentName={formData.name} 
+      />
+
+      <UnsuspendAccountModal 
+        isOpen={isUnsuspendModalOpen}
+        onClose={() => !isProcessing && setIsUnsuspendModalOpen(false)}
+        onConfirm={handleUnsuspendConfirm}
+        userName={formData.name}
+        reason={suspensionReason}
+      />
+
       {/* --- HEADER --- */}
       <div className="relative flex items-center justify-between mb-8">
         <button
@@ -97,19 +186,22 @@ const FacultyDetails = () => {
       {/* --- MAIN GRID LAYOUT --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        {/* LEFT COLUMN (Profile & Security) */}
+        {/* LEFT COLUMN (Profile Summary) */}
         <div className="flex flex-col gap-6 lg:col-span-1">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200 flex flex-col items-center">
             <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-4" style={{ backgroundColor: BRAND }}>
               <FiUser size={50} className="text-white" />
             </div>
-            <h3 className="text-xl font-extrabold text-gray-800 mb-2">{facultyMember.name}</h3>
-            {renderStatus(facultyMember.status)}
+            
+            <h3 className="text-xl font-extrabold text-gray-800 mb-2 text-center">{formData.name}</h3>
+            {renderStatus(status)}
+            
             <hr className="w-full border-dashed border-gray-300 my-6" />
+            
             <div className="w-full flex flex-col gap-2 text-sm">
               <p><span className="font-extrabold text-gray-900">Role :</span> <span className="text-gray-600 font-medium">{facultyMember.role}</span></p>
-              <p><span className="font-extrabold text-gray-900">Phone Number :</span> <span className="text-gray-600 font-medium">{formData.phone}</span></p>
-              <p><span className="font-extrabold text-gray-900">Email :</span> <span className="text-gray-600 font-medium">{formData.email}</span></p>
+              <p><span className="font-extrabold text-gray-900">Phone :</span> <span className="text-gray-600 font-medium">{formData.phone}</span></p>
+              <p className="truncate"><span className="font-extrabold text-gray-900">Email :</span> <span className="text-gray-600 font-medium">{formData.email}</span></p>
             </div>
           </div>
 
@@ -119,17 +211,14 @@ const FacultyDetails = () => {
               Send a secure password reset link to the user's email address.
             </p>
             <div className="flex justify-end">
-              <button 
-                className="px-5 py-2.5 rounded-xl font-bold border-2 bg-white transition-colors hover:bg-blue-50"
-                style={{ borderColor: BRAND, color: BRAND }}
-              >
+              <button className="px-5 py-2.5 rounded-xl font-bold border-2 bg-white transition-colors hover:bg-blue-50" style={{ borderColor: BRAND, color: BRAND }}>
                 Send Password Reset
               </button>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN (Edit Form & Suspend) */}
+        {/* RIGHT COLUMN (Edit Form) */}
         <div className="flex flex-col gap-6 lg:col-span-2">
           
           <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-blue-200">
@@ -161,30 +250,60 @@ const FacultyDetails = () => {
               </div>
 
               <div className="flex items-end">
-                {/* --- WIRED SAVE BUTTON --- */}
                 <button 
                   onClick={handleSaveChanges}
                   disabled={isSaving}
-                  className="w-full py-3 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center"
                   style={{ backgroundColor: isSaving ? "" : BRAND }}
                 >
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? "Saving to Database..." : "Save Changes"}
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-red-500">
-            <h3 className="text-lg font-bold text-red-600 mb-2">Suspend Account</h3>
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-              <p className="text-sm text-gray-600 font-medium leading-relaxed md:w-2/3">
-                Suspending this account will immediately revoke the supervisor's login access. Their project data will remain in the database, but they will not be able to interact with the system.
-              </p>
-              <button className="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md whitespace-nowrap">
-                Suspend Account
-              </button>
+          {/* Conditional Danger/Warning Zone */}
+          {status === "Suspended" ? (
+            
+            // --- IF SUSPENDED: SHOW THE RESTORE UI ---
+            <div className="bg-[#fffdfd] rounded-2xl p-6 md:p-8 shadow-sm border border-yellow-500">
+              <h3 className="text-lg font-bold text-yellow-600 mb-2">Account is Suspended</h3>
+              <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200 mb-4">
+                <p className="text-sm font-bold text-yellow-800 mb-1">Reason for suspension:</p>
+                <p className="text-sm text-yellow-700 italic">"{suspensionReason || "No reason recorded."}"</p>
+              </div>
+              <div className="flex flex-col md:flex-row gap-6 items-center justify-between mt-4">
+                <p className="text-sm text-gray-600 font-medium leading-relaxed md:w-2/3">
+                  This user currently cannot access the system. You can restore their access by unsuspending their account.
+                </p>
+                <button 
+                  onClick={() => setIsUnsuspendModalOpen(true)}
+                  className="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-md whitespace-nowrap"
+                >
+                  Restore Access
+                </button>
+              </div>
             </div>
-          </div>
+
+          ) : (
+
+            // --- IF ACTIVE/PENDING: SHOW THE SUSPEND UI ---
+            <div className="bg-[#fffdfd] rounded-2xl p-6 md:p-8 shadow-sm border border-red-500">
+              <h3 className="text-lg font-bold text-red-600 mb-2">Suspend Account</h3>
+              <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                <p className="text-sm text-gray-600 font-medium leading-relaxed md:w-2/3">
+                  Suspending this account will immediately revoke the supervisor's login access. Their project data will remain in the database, but they will not be able to interact with the system.
+                </p>
+                <button 
+                  onClick={() => setIsSuspendModalOpen(true)}
+                  className="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md whitespace-nowrap"
+                >
+                  Suspend Account
+                </button>
+              </div>
+            </div>
+            
+          )}
 
         </div>
       </div>

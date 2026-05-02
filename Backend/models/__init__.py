@@ -5,7 +5,7 @@ db = SQLAlchemy()
 
 from .academic_cycle import AcademicCycle
 from .broadcasts import Broadcast
-from .coordinators import Coordinator
+from .coordinators import Coordinator, CoordinatorHistory
 from .milestones import Milestone
 from .panel_members import Panel_Member
 from .panels import Panel

@@ -30,6 +30,7 @@ import ImportData from './Administrator Pages/ImportData';
 import AdministratorProfile from './Administrator Pages/AdministratorProfile';
 import ManageStudents from './Administrator Pages/ManageStudents';
 import FacultyDetails from './Administrator Pages/Manage Faculty Components/FacultyDetails';
+import DataImport from './Administrator Pages/DataImport/DataImport';
 
 
 // --- NEW: The Supervisor Wrapper Component ---
@@ -101,7 +102,7 @@ function App() {
           <Route path="dashboard" element={<AdministratorDashboard />} />
           <Route path="managefaculty" element={<ManageFaculty />} />
           <Route path="managefaculty/:id" element={<FacultyDetails />} />
-          <Route path="dataimport" element={<ImportData />} />
+          <Route path="dataimport" element={<DataImport />} />
           <Route path="managestudents" element={<ManageStudents />} />
           <Route path="profile" element={<AdministratorProfile />} />
         </Route>

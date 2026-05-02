@@ -3,6 +3,10 @@ import AdministratorSidebar from "./AdministratorSidebar";
 import { Outlet } from "react-router-dom";
 import { FiMenu } from "react-icons/fi";
 
+// --- ADDED THESE TWO IMPORTS ---
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const AdministratorLayout = () => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -28,6 +32,20 @@ const AdministratorLayout = () => {
               <FiMenu size={24} />
             </button>
           )}
+          
+          {/* --- FIXED AUTO-CLOSE TIME --- */}
+          <ToastContainer 
+            position="top-right"
+            autoClose={3000} 
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+          />
 
           <Outlet />
         </div>
