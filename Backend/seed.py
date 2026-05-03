@@ -138,13 +138,7 @@ def seed_data():
         db.session.commit()
 
         # -------------------------------------------------------
-        # SUPERVISOR INTERESTS (14 entries)
-        # sup1(coord1): AI, ML, NLP
-        # sup2(coord2): Cybersecurity, Cloud
-        # sup3: Data Science, Computer Vision
-        # sup4: Web Dev, Mobile Dev, HCI
-        # sup5: IoT, Blockchain
-        # sup6: Software Engineering, Database Systems
+        # SUPERVISOR INTERESTS
         # -------------------------------------------------------
         print("Seeding Supervisor Interests...")
         db.session.add_all([
@@ -178,7 +172,6 @@ def seed_data():
 
         # -------------------------------------------------------
         # PANEL MEMBERS
-        # Each panel has 1 Chair + 1 Member
         # -------------------------------------------------------
         print("Seeding Panel Members...")
         db.session.add_all([
@@ -195,7 +188,6 @@ def seed_data():
 
         # -------------------------------------------------------
         # STUDENTS (12 total — 6 year 2, 6 year 4)
-        # assigned_supervisor_id set for students with accepted pitches
         # -------------------------------------------------------
         print("Seeding Students...")
         # Year 2
@@ -216,29 +208,63 @@ def seed_data():
         db.session.commit()
 
         # -------------------------------------------------------
-        # MILESTONES (2 total — 1 per year)
+        # MILESTONES
+        #
+        # Year 2 students — 2 milestones:
+        #   M1: Project Proposal        → Week 2  (February)
+        #   M2: Presentation & Report   → Week 15 (May)
+        #
+        # Year 4 students — 3 milestones:
+        #   M1: Project Proposal        → Semester 1 (November)
+        #   M2: Progress Report         → Semester 2 (February)
+        #   M3: Final Presentation & Report → Week 15 (May)
         # -------------------------------------------------------
         print("Seeding Milestones...")
-        m_year2 = Milestone(
-            milestone_name='Project Proposal',
+
+        # --- Year 2 ---
+        m2_1 = Milestone(
+            milestone_name='Milestone 1 - Project Proposal',
             cycle_id=cycle3.cycle_id,
             year='2',
             is_required=True,
-            due_date=datetime(2025, 2, 28)
+            due_date=datetime(2025, 2, 14, 23, 59)   # Week 2
         )
-        m_year4 = Milestone(
-            milestone_name='Final Year Project Report',
+        m2_2 = Milestone(
+            milestone_name='Milestone 2 - Presentation & Final Report',
+            cycle_id=cycle3.cycle_id,
+            year='2',
+            is_required=True,
+            due_date=datetime(2025, 5, 30, 23, 59)   # Week 15
+        )
+
+        # --- Year 4 ---
+        m4_1 = Milestone(
+            milestone_name='Milestone 1 - Project Proposal',
             cycle_id=cycle3.cycle_id,
             year='4',
             is_required=True,
-            due_date=datetime(2025, 4, 30)
+            due_date=datetime(2024, 11, 29, 23, 59)  # Semester 1
         )
-        db.session.add_all([m_year2, m_year4])
+        m4_2 = Milestone(
+            milestone_name='Milestone 2 - Progress Report',
+            cycle_id=cycle3.cycle_id,
+            year='4',
+            is_required=True,
+            due_date=datetime(2025, 2, 28, 23, 59)   # Semester 2
+        )
+        m4_3 = Milestone(
+            milestone_name='Milestone 3 - Final Presentation & Report',
+            cycle_id=cycle3.cycle_id,
+            year='4',
+            is_required=True,
+            due_date=datetime(2025, 5, 30, 23, 59)   # Week 15
+        )
+
+        db.session.add_all([m2_1, m2_2, m4_1, m4_2, m4_3])
         db.session.commit()
 
         # -------------------------------------------------------
         # PROJECT PITCHES (10 total)
-        # Unique constraint: one pitch per (student, supervisor)
         # -------------------------------------------------------
         print("Seeding Project Pitches...")
         p1  = Project_Pitch(student_id=std1.student_id,  supervisor_id=sup3.supervisor_id, project_title='AI-Powered Study Assistant',              abstract='A system that uses NLP to help students study more effectively using adaptive learning techniques.',                                          status='Accepted')
@@ -256,11 +282,12 @@ def seed_data():
 
         # -------------------------------------------------------
         # STUDENT SUBMISSION (1) + SUBMISSION ATTACHMENT (1)
+        # Seed one sample submission for std1 (Year 2, Milestone 1)
         # -------------------------------------------------------
         print("Seeding Student Submission...")
         sub1 = Student_Submission(
             student_id=std1.student_id,
-            milestone_id=m_year2.milestone_id,
+            milestone_id=m2_1.milestone_id,
             submission_status='On Time'
         )
         db.session.add(sub1)
@@ -282,7 +309,7 @@ def seed_data():
         b1 = Broadcast(
             coordinator_id=coord1.coordinator_id,
             title='Proposal Submission Deadline Reminder',
-            message='This is a reminder that all 2nd year project proposals are due by 28th February 2025. Ensure your document is uploaded before midnight. Late submissions will be marked accordingly.',
+            message='This is a reminder that all 2nd year project proposals are due by 14th February 2025. Ensure your document is uploaded before midnight. Late submissions will be marked accordingly.',
             broadcast_year='2'
         )
         db.session.add(b1)
@@ -305,5 +332,14 @@ def seed_data():
         db.session.commit()
 
         print("<-------- Seeding Complete! All tables populated. ---------->")
+        print("")
+        print("Milestone Summary:")
+        print("  Year 2 → 2 milestones")
+        print("    [1] Milestone 1 - Project Proposal         (Due: Feb 14, 2025)")
+        print("    [2] Milestone 2 - Presentation & Report    (Due: May 30, 2025)")
+        print("  Year 4 → 3 milestones")
+        print("    [1] Milestone 1 - Project Proposal         (Due: Nov 29, 2024)")
+        print("    [2] Milestone 2 - Progress Report          (Due: Feb 28, 2025)")
+        print("    [3] Milestone 3 - Final Presentation & Report (Due: May 30, 2025)")
 
 seed_data()

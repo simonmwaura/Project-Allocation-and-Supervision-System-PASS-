@@ -11,7 +11,7 @@ const AvatarIcon = () => (
   </div>
 );
 
-const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
+const ProjectPitch = ({ supervisor, onBack, onSubmit, isSubmitting }) => {
   const fileInputRef = useRef(null);
   const [projectTitle, setProjectTitle] = useState("");
   const [projectPitch, setProjectPitch] = useState("");
@@ -56,17 +56,16 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
     interests: supervisor?.interests || ["Web Development", "Artificial Intelligence", "Cybersecurity"],
     slotsTotal: supervisor?.slotsTotal || 7,
     slotsFilled: supervisor?.slotsFilled || 3,
-    bio: supervisor?.bio || "I am interested in supervising projects that bridge the gap between intelligent algorithms and secure, practical web applications. I particularly welcome proposals focused on integrating machine learning models, building secure system architectures, or developing AI-driven web platforms."
+    bio:
+      supervisor?.bio ||
+      "I am interested in supervising projects that bridge the gap between intelligent algorithms and secure, practical web applications. I particularly welcome proposals focused on integrating machine learning models, building secure system architectures, or developing AI-driven web platforms.",
   };
 
   return (
-   // FIX 1: Added pt-16 on mobile to push everything down below the hamburger icon
     <div className="w-full flex flex-col items-center px-4 pt-16 lg:pt-8 pb-12">
 
-      {/* FIX 2: Removed the complex flex-row. We now stack the Back button above the Title */}
+      {/* Header: Back button + Title */}
       <div className="w-full max-w-5xl flex flex-col gap-4 mb-8">
-        
-        {/* Back Button - Safely on its own line */}
         <div className="flex justify-start">
           <button
             onClick={onBack}
@@ -77,17 +76,10 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
             Back to Selection
           </button>
         </div>
-        
-        {/* Center: Title */}
+
         <h2 className="text-2xl md:text-3xl font-bold text-center w-full" style={{ color: BRAND }}>
           Pitch to {sv.name}
         </h2>
-
-      </div>
-
-      {/* Two-column layout (The rest remains exactly the same!) */}
-      <div className="flex flex-col lg:flex-row items-start gap-6 w-full max-w-5xl mx-auto">
-
       </div>
 
       {/* Two-column layout */}
@@ -99,7 +91,7 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
           style={{ borderColor: BRAND }}
         >
           <AvatarIcon />
-          
+
           <h3 className="font-extrabold text-2xl md:text-3xl text-gray-600 text-center mb-1">{sv.name}</h3>
           <p className="text-sm md:text-base text-gray-500 mb-6 text-center">{sv.email}</p>
 
@@ -135,6 +127,7 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
             Propose a Custom Project
           </h3>
 
+          {/* Project Title */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-gray-500">Your Project Title</label>
             <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-all">
@@ -149,6 +142,7 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
             </div>
           </div>
 
+          {/* Project Pitch */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-gray-500">Your Project Pitch</label>
             <div className="flex gap-3 border border-gray-300 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-all">
@@ -163,6 +157,7 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
             </div>
           </div>
 
+          {/* File Upload */}
           <div className="flex flex-col gap-1.5 pt-2">
             <label className="text-sm text-gray-500">Attach full Project Pitch</label>
             <div
@@ -192,11 +187,21 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
                 </div>
               ) : (
                 <>
-                  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-3">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="12" y1="18" x2="12" y2="12"></line>
-                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  <svg
+                    width="50"
+                    height="50"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#9ca3af"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mb-3"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
                   </svg>
                   <p className="text-xs md:text-sm text-gray-400 text-center font-medium">
                     Drag and drop your full proposal (.PDF, .DOCX) here.
@@ -215,6 +220,7 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
 
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
 
+          {/* Action Buttons */}
           <div className="flex gap-3 md:gap-4 mt-2">
             <button
               onClick={onBack}
@@ -224,14 +230,14 @@ const ProjectPitch = ({ supervisor, onBack, onSubmit }) => {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 py-3 rounded-xl font-bold text-sm md:text-base text-white shadow-md hover:opacity-90 transition-opacity"
+              disabled={isSubmitting}
+              className="flex-1 py-3 rounded-xl font-bold text-sm md:text-base text-white shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
               style={{ backgroundColor: BRAND }}
             >
-              Submit Pitch
+              {isSubmitting ? "Submitting..." : "Submit Pitch"}
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

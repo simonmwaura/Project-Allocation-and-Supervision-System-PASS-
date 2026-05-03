@@ -7,10 +7,16 @@ const WithdrawModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+    // --- FIX 1: Added onClick={onClose} to the dark background overlay ---
+    <div 
+      className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {/* --- FIX 2: Added e.stopPropagation() so clicking the white card doesn't close it --- */}
       <div 
         className="bg-white rounded-2xl border flex flex-col items-center w-full max-w-[500px] p-6 relative shadow-2xl"
         style={{ borderColor: BRAND }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close X icon */}
         <button 
