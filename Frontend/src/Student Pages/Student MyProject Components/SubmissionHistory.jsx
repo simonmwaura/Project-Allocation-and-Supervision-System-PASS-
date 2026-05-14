@@ -12,37 +12,90 @@ const CheckCircleIcon = () => (
   </svg>
 );
 
-const SubmissionCard = ({ milestone, submittedAt, files }) => (
-  <div className="w-full bg-white rounded-2xl border border-blue-600 px-5 py-5 shadow-sm">
-    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="flex-shrink-0"><CheckCircleIcon /></div>
-        <div className="min-w-0">
-          <p className="font-bold text-sm sm:text-base break-words" style={{ color: BRAND }}>{milestone}</p>
-          <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Submitted: {submittedAt}</p>
-        </div>
-      </div>
+const SubmissionCard = ({ milestone, submittedAt, files }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
 
-      <div className="flex flex-col gap-2 sm:items-start sm:min-w-[220px]">
-        <div className="flex flex-col gap-1">
-          {files.map((file) => (
-            <div key={file} className="flex items-center gap-2 text-sm text-gray-600">
-              <FiPaperclip size={13} className="text-gray-400 flex-shrink-0" />
-              <span className="break-all">{file}</span>
-            </div>
-          ))}
+  // --- NEW DOWNLOAD FUNCTION ---
+  const handleDownload = async (filename) => {
+    if (!filename) {
+      toast.error("No file attached to this submission.");
+      return;
+    }
+
+    setIsDownloading(true);
+    const toastId = toast.loading(`Downloading ${filename}...`);
+
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Fetch the file securely with the JWT token
+      const response = await fetch(`http://127.0.0.1:5000/api/students/download/${filename}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error("File not found or access denied.");
+      }
+
+      // Convert the response into a raw file blob
+      const blob = await response.blob();
+      
+      // Create a temporary invisible link in the browser to force download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename; 
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      toast.update(toastId, { render: "Download complete!", type: "success", isLoading: false, autoClose: 3000 });
+
+    } catch (error) {
+      console.error(error);
+      toast.update(toastId, { render: "Failed to download file.", type: "error", isLoading: false, autoClose: 3000 });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="w-full bg-white rounded-2xl border border-blue-600 px-5 py-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="flex-shrink-0"><CheckCircleIcon /></div>
+          <div className="min-w-0">
+            <p className="font-bold text-sm sm:text-base break-words" style={{ color: BRAND }}>{milestone}</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Submitted: {submittedAt}</p>
+          </div>
         </div>
-        <button
-          className="w-full sm:w-auto px-6 py-2 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity mt-1"
-          style={{ backgroundColor: BRAND }}
-          onClick={() => toast.info("Downloading " + files[0] + "...")}
-        >
-          Download
-        </button>
+
+        <div className="flex flex-col gap-2 sm:items-start sm:min-w-[220px]">
+          <div className="flex flex-col gap-1">
+            {files.map((file) => (
+              <div key={file} className="flex items-center gap-2 text-sm text-gray-600">
+                <FiPaperclip size={13} className="text-gray-400 flex-shrink-0" />
+                <span className="break-all">{file}</span>
+              </div>
+            ))}
+          </div>
+          {/* --- UPDATED BUTTON --- */}
+          <button
+            className="w-full sm:w-auto px-6 py-2 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity mt-1 disabled:opacity-50 disabled:cursor-wait"
+            style={{ backgroundColor: BRAND }}
+            onClick={() => handleDownload(files[0])}
+            disabled={isDownloading || !files || files.length === 0}
+          >
+             {isDownloading ? "Downloading..." : "Download"}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SubmissionHistory = () => {
   const navigate = useNavigate();

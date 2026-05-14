@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react'; // Added these
 
 // Temporary Page
@@ -13,6 +13,7 @@ import UploadDocuments from './Student Pages/Student MyProject Components/Upload
 import SubmissionHistory from './Student Pages/Student MyProject Components/SubmissionHistory';
 import CoordinatorNotices from './Student Pages/Student MyProject Components/CoordinatorNotices';
 import ProjectOverview from './Student Pages/Student Dashboard Components/ProjectOverview';
+import StudentWrapper from './Student Pages/Student Components/StudentWrapper';
 
 // Supervisor Routes
 import SupervisorLayout from './Supervisor Pages/Supervisor Components/SupervisorLayout';
@@ -21,6 +22,7 @@ import MySupervisees from './Supervisor Pages/MySupervisees';
 import MyPanel from './Supervisor Pages/MyPanel';
 import SupervisorProfile from './Supervisor Pages/SupervisiorProfile';
 import SupervisorInterestsSetup from './Supervisor Pages/Supervisor Components/SupervisorInterestsSetup'; // <-- Import the new setup component
+import EditResearchInterests from "./Supervisor Pages/EditResearchInterests"; // Import it
 
 // Administrator Routes (Keep your existing imports)
 import AdministratorLayout from './Administrator Pages/Administrator Component/AdministratorLayout';
@@ -35,41 +37,70 @@ import DataImport from './Administrator Pages/DataImport/DataImport';
 
 // --- NEW: The Supervisor Wrapper Component ---
 // This acts as a "bouncer" to check if they need onboarding
+// --- NEW: The REAL Supervisor Wrapper Component ---
 const SupervisorWrapper = () => {
-  // In a real app, you would fetch this boolean from your database or auth context
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false); 
+  const navigate = useNavigate();
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [supervisorName, setSupervisorName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulating a database check to see if they already picked interests
-    setTimeout(() => {
-      setHasCompletedOnboarding(false); // Set to true to bypass the setup screen
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const checkOnboarding = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) { 
+          navigate("/"); 
+          return; 
+        }
+
+        // Ask Flask if this supervisor is done with onboarding
+        const response = await fetch("http://127.0.0.1:5000/api/supervisors/onboarding-status", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          // If true, they go to dashboard. If false, they stay on setup screen.
+          setHasCompletedOnboarding(data.onboarding_complete);
+          
+          // Get their name from local storage to say "Welcome, Simon"
+          const user = JSON.parse(localStorage.getItem("user") || "{}");
+          setSupervisorName(user?.first_name || "Supervisor");
+        } else {
+          // Token invalid or profile not found
+          navigate("/");
+        }
+      } catch (error) {
+        navigate("/");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkOnboarding();
+  }, [navigate]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-[#302AE2] font-bold">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[#302AE2] text-xl font-bold animate-pulse">
+        Checking profile status...
+      </div>
+    );
   }
 
-  // If they haven't completed it, show the setup screen ONLY (No sidebar!)
+  // If false, show the setup screen ONLY (No sidebar!)
   if (!hasCompletedOnboarding) {
     return (
       <SupervisorInterestsSetup 
-        onComplete={(interests) => {
-          console.log("Saving to DB:", interests);
-          // Once they click confirm, we update state. 
-          // React instantly removes the setup screen and loads the Dashboard!
-          setHasCompletedOnboarding(true);
-        }} 
+        supervisorName={supervisorName}
+        onComplete={() => setHasCompletedOnboarding(true)} 
       />
     );
   }
 
-  // If they have completed it, render the normal Layout (which has the sidebar)
+  // If true, render the normal Layout (which has the sidebar)
   return <SupervisorLayout />;
 };
-
 
 function App() {
   return (
@@ -78,7 +109,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Student Routes */}
-        <Route path="/student" element={<StudentLayout />}>
+       <Route path="/student" element={<StudentWrapper />}>
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="myproject" element={<MyProject />} />
           <Route path="profile" element={<Profile />} />
@@ -95,6 +126,7 @@ function App() {
           <Route path="mysupervisees" element={<MySupervisees />} />
           <Route path="mypanel" element={<MyPanel />} />
           <Route path="profile" element={<SupervisorProfile />} />
+          <Route path="edit-interests" element={<EditResearchInterests />} />
         </Route>
 
         {/* Administrator Routes */}

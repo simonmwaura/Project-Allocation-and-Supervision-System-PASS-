@@ -4,7 +4,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from werkzeug.security import check_password_hash  # <-- NEEDED FOR STAFF LOGIN
 
-from models import db, User,Student
+from models import db, User,Student,Supervisor
 
 user_bp = Blueprint('users', __name__)
 
@@ -17,7 +17,7 @@ GOOGLE_CLIENT_ID = "1007402569571-7s9h5cb32gfkf4atjpp5svgpt8tnalmr.apps.googleus
 @user_bp.route('/auth/google', methods=['POST'])
 def google_login():
     token = request.json.get('token')
-    
+
     if not token:
         return jsonify({"status": "error", "message": "No token provided"}), 400
 
@@ -27,16 +27,17 @@ def google_login():
         google_id = idinfo['sub']
         email = idinfo['email']
 
-        # 1. THE VIP LIST
         allowed_domains = ['@students.uonbi.ac.ke', '@uonbi.ac.ke']
-        admin_emails = ['smmx2005@gmail.com'] # Add any other admin Gmails here
-        
-        # Check if they are either in the allowed domains OR on the admin VIP list
-        if not any(email.endswith(domain) for domain in allowed_domains) and email not in admin_emails:
+        admin_emails = ['smmx2005@gmail.com']
+        supervisor_emails = ['simonmwaura2090@gmail.com']  # <-- add your email here
+
+        all_vip_emails = admin_emails + supervisor_emails
+
+        if not any(email.endswith(domain) for domain in allowed_domains) and email not in all_vip_emails:
             return jsonify({
-                "status": "error", 
+                "status": "error",
                 "message": "Access restricted. Please use your official University of Nairobi email address."
-            }), 403 
+            }), 403
 
         first_name = idinfo.get('given_name', '')
         last_name = idinfo.get('family_name', '')
@@ -44,33 +45,48 @@ def google_login():
         user = User.query.filter_by(email=email).first()
 
         if not user:
-            # 2. THE AUTO-PROMOTER (New Users)
-            assigned_role = 'Administrator' if email in admin_emails else 'Student'
-        
+            if email in admin_emails:
+                assigned_role = 'Administrator'
+            elif email in supervisor_emails:
+                assigned_role = 'Supervisor'
+            else:
+                assigned_role = 'Student'
+
             user = User(
                 google_id=google_id,
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
-                user_role=assigned_role,        
-                account_status='Accepted' if assigned_role == 'Administrator' else 'Pending',   
-                password=None               
+                user_role=assigned_role,
+                account_status='Accepted' if assigned_role in ('Administrator', 'Supervisor') else 'Pending',
+                password=None
             )
             db.session.add(user)
             db.session.commit()
+
+            # Auto-create the Supervisor profile row so dashboard queries don't break
+            if assigned_role == 'Supervisor':
+                new_sup = Supervisor(
+                    user_id=user.user_id,
+                    max_2nd_year_capacity=5,
+                    max_4th_year_capacity=5
+                )
+                db.session.add(new_sup)
+                db.session.commit()
+
         else:
-            # 3. EXISTING USER CHECK
             if not user.google_id:
                 user.google_id = google_id
-            
-            # If they already logged in before as a Student, auto-promote them now
+
             if email in admin_emails and user.user_role != 'Administrator':
                 user.user_role = 'Administrator'
                 user.account_status = 'Accepted'
-                
+            elif email in supervisor_emails and user.user_role != 'Supervisor':
+                user.user_role = 'Supervisor'
+                user.account_status = 'Accepted'
+
             db.session.commit()
 
-        # Create JWT...
         access_token = create_access_token(identity=str(user.user_id))
 
         return jsonify({
@@ -89,7 +105,6 @@ def google_login():
         return jsonify({"status": "error", "message": "Invalid Google token"}), 401
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 # ==========================================
 # 2. MANUAL LOGIN (Strictly for Staff/Admins)
 # ==========================================

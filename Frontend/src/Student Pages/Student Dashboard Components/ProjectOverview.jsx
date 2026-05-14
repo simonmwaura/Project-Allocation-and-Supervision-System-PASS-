@@ -122,11 +122,12 @@ const ProjectOverview = () => {
           </div>
 
           <button
-            className="w-full mt-8 py-3 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-colors shadow-sm"
-            style={{ backgroundColor: BRAND }}
-          >
-            View all project details
-          </button>
+  onClick={() => navigate("/student/myproject")} // <-- ADD THIS LINE
+  className="w-full mt-8 py-3 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-colors shadow-sm"
+  style={{ backgroundColor: BRAND }}
+>
+  View all project details
+</button>
         </div>
 
         {/* Card 2: Upcoming Deadline */}

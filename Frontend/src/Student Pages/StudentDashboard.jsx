@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom"; // Added Navigate here
 import NoSupervisor from "./Student Components/NoSupervisors";
 import SupervisorSelection from "./Student Dashboard Components/SupervisorSelection";
 import PendingPitchDetails from "./Student Dashboard Components/PendingPitchDetails";
@@ -56,7 +56,7 @@ const StudentDashboard = () => {
         setSupervisors(supervisorsJson.data || []);
         setStudentStatus(statusJson.data.status); 
         
-        // --- FIX 1: Check for "has_pitches" (the new backend status) OR "pending" ---
+        // Check for "has_pitches" (the new backend status) OR "pending"
         if (statusJson.data.status === "has_pitches" || statusJson.data.status === "pending") {
           
           const activePitches = statusJson.data.pitches || [];
@@ -91,18 +91,17 @@ const handleWithdrawPitch = async () => {
 
     try {
         const token = localStorage.getItem("token");
-        // FIX: Pass the ID directly in the URL path to match your new Python route
+        // Pass the ID directly in the URL path to match your Python route
         const response = await fetch(`http://127.0.0.1:5000/api/students/withdraw-pitch/${viewingPitch.pitch_id}`, {
             method: "DELETE",
             headers: { "Authorization": `Bearer ${token}` }
         });
 
       if (response.ok) {
-        // If they are pitching again, we don't necessarily need the success toast
         if (isModalOpen) toast.success("Pitch withdrawn successfully.");
         
         setIsModalOpen(false); 
-        setViewingPitch(null); // Go back to the grid
+        setViewingPitch(null); 
         fetchDashboardData(); 
       } else {
         const data = await response.json();
@@ -125,25 +124,21 @@ const handleWithdrawPitch = async () => {
           </div>
         ) : studentStatus === "assigned" ? (
           
-          <div className="p-8 text-center text-green-600 font-bold">
-            You are officially assigned to {assignedData?.name || "a supervisor"}.
-          </div>
+          // --- UPDATED: Instantly redirects assigned students to the Project Overview ---
+          <Navigate to="/student/project-details" replace />
 
         ) : viewingPitch?.status === "Declined" ? (
 
-          // --- FIX 2: SHOW DECLINED DETAILS IF STATUS IS DECLINED ---
           <DeclinedPitchDetails 
             pitchData={viewingPitch}
             onBack={() => setViewingPitch(null)}
             onPitchAgain={() => {
-              // Delete the declined pitch from the DB so they get their slot back to re-pitch!
               handleWithdrawPitch(); 
             }}
           />
 
         ) : viewingPitch?.status === "Pending" ? (
 
-          // --- FIX 3: SHOW PENDING DETAILS IF STATUS IS PENDING ---
           <PendingPitchDetails 
             pitchData={viewingPitch} 
             onBack={() => setViewingPitch(null)} 

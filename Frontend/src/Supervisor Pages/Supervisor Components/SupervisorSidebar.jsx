@@ -1,11 +1,28 @@
 import { FiGrid, FiUsers, FiClipboard, FiUser, FiLogOut, FiX } from "react-icons/fi";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Added useNavigate
+import { toast } from "react-toastify"; // Optional: to show a goodbye message
 
 const BRAND = "#2b20d6";
 
 const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate(); // Initialize navigate
   const isActive = (path) => location.pathname === path;
+
+  // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    // 1. Remove the token from local storage
+    localStorage.removeItem("token");
+    
+    // 2. Close the mobile sidebar if it's open
+    setIsOpen(false);
+    
+    // 3. Show a quick toast (optional)
+    toast.success("Logged out successfully");
+    
+    // 4. Redirect to the landing/login page
+    navigate("/"); 
+  };
 
   return (
     <>
@@ -69,8 +86,10 @@ const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
             Profile
           </Link>
 
+          {/* Attach the handleLogout function to the onClick event */}
           <button
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors hover:bg-gray-50"
             style={{ color: BRAND }}
           >
             <FiLogOut size={20} />

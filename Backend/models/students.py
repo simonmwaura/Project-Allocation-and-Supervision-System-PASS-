@@ -9,6 +9,9 @@ class Student(db.Model):
     registration_number = db.Column(db.String(17), nullable=False)
     year = db.Column(db.Enum('2', '4', name="year_levels"), nullable=False)
 
+    # False until the student completes their first-login setup
+    onboarding_complete = db.Column(db.Boolean, default=False, nullable=False)
+
     # Relationships
     student_user = db.relationship('User', back_populates="students")
     student_supervisor = db.relationship("Supervisor", back_populates="supervisor_student")

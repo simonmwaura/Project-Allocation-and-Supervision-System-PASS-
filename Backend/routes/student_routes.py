@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import send_from_directory, current_app, jsonify, Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime # Added this
 import os
+
 
 # Updated to include all models used in your routes
 from models import (
@@ -24,7 +25,6 @@ student_bp = Blueprint('students', __name__)
 # ==========================================
 
 # 1. READ: Get My Own Profile
-# This joins the User and Student data so they see everything in one go.
 @student_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_my_profile():
@@ -39,7 +39,9 @@ def get_my_profile():
         "data": {
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "registration_number": user.students.registration_number, # Accessing via .students
+            "email": user.email,               # <-- ADDED THIS
+            "phone_number": user.phone_number, # <-- ADDED THIS
+            "registration_number": user.students.registration_number,
             "year": user.students.year
         }
     }), 200
@@ -340,6 +342,11 @@ def upload_document():
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1].lower()
         unique_filename = f"{student.student_id}_{milestone_id}_{filename}"
+        
+        # --- ADD THESE TWO LINES TO FORCE THE EXACT FOLDER ---
+        UPLOAD_FOLDER = os.path.join(current_app.root_path, 'uploads')
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True) 
+        
         file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
         file.save(file_path)
 
@@ -354,11 +361,11 @@ def upload_document():
             existing.submission_at = now
             existing.submission_status = "Resubmitted"
 
-            # Remove old attachments and add the new one
+           # Remove old attachments and add the new one
             Submission_Attachment.query.filter_by(submission_id=existing.submission_id).delete()
             new_attachment = Submission_Attachment(
                 submission_id=existing.submission_id,
-                file_url=file_path,
+                file_url=unique_filename, # <--- FIXED
                 file_type=file_ext
             )
             db.session.add(new_attachment)
@@ -375,7 +382,7 @@ def upload_document():
 
             new_attachment = Submission_Attachment(
                 submission_id=new_submission.submission_id,
-                file_url=file_path,
+                file_url=unique_filename, # <--- FIXED
                 file_type=file_ext
             )
             db.session.add(new_attachment)
@@ -451,3 +458,87 @@ def get_milestones():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500     
     
+# Add these two routes to student_routes.py
+# Also add to the imports at the top:
+# from werkzeug.security import generate_password_hash  (already there)
+
+
+# ==========================================
+# GET: Student Onboarding Status
+# Called by StudentWrapper on every /student/* load
+# ==========================================
+@student_bp.route('/onboarding-status', methods=['GET'])
+@jwt_required()
+def student_onboarding_status():
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        if not user or not user.students:
+            return jsonify({"status": "error", "message": "Student profile not found"}), 404
+
+        return jsonify({
+            "status": "success",
+            "onboarding_complete": user.students.onboarding_complete
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ==========================================
+# POST: Complete Student Onboarding
+# Saves phone number and hashed password, marks onboarding done
+# ==========================================
+@student_bp.route('/complete-onboarding', methods=['POST'])
+@jwt_required()
+def complete_student_onboarding():
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        if not user or not user.students:
+            return jsonify({"status": "error", "message": "Student profile not found"}), 404
+
+        data = request.get_json()
+        phone    = data.get('phone_number', '').strip()
+        password = data.get('password', '')
+
+        if not phone or len(phone) < 10:
+            return jsonify({"status": "error", "message": "Please enter a valid phone number."}), 400
+        if not password or len(password) < 8:
+            return jsonify({"status": "error", "message": "Password must be at least 8 characters."}), 400
+
+        user.phone_number = phone
+        user.password     = generate_password_hash(password)
+
+        user.students.onboarding_complete = True
+
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Account setup complete!"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"\n\n=== STUDENT ONBOARDING ERROR: {str(e)} ===\n\n")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+# ==========================================
+# GET: Download a specific student submission file
+# ==========================================
+@student_bp.route('/download/<path:filename>', methods=['GET'])
+@jwt_required()
+def download_student_file(filename):
+    try:
+        # Construct the path to your uploads directory
+        UPLOADS_FOLDER = os.path.join(current_app.root_path, 'uploads')
+        
+        print(f"\n--- DEBUG (Student): Searching for file in: {UPLOADS_FOLDER} ---")
+        print(f"--- DEBUG (Student): Filename: {filename} ---\n")
+        
+        # Serve the file securely, forcing a download
+        return send_from_directory(UPLOADS_FOLDER, filename, as_attachment=True)
+        
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "File not found on the server."}), 404
+    except Exception as e:
+        print(f"\n=== STUDENT DOWNLOAD ERROR: {str(e)} ===\n")
+        return jsonify({"status": "error", "message": "Failed to download file."}), 500

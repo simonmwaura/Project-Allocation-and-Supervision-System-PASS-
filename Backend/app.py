@@ -13,6 +13,7 @@ from routes.user_routes import user_bp
 from routes.administrator_routes import admin_bp
 from routes.student_routes import student_bp
 from routes.coordinator_routes import coordinator_bp
+from routes.supervisor_routes import supervisor_bp
 
 # ---> NEW: Import your upload routes <---
 from routes.upload_routes import upload_bp 
@@ -34,6 +35,7 @@ migrate = Migrate(app, db)
 app.register_blueprint(user_bp, url_prefix='/api/users')
 app.register_blueprint(student_bp, url_prefix='/api/students')
 app.register_blueprint(coordinator_bp, url_prefix='/api/coordinators')
+app.register_blueprint(supervisor_bp, url_prefix='/api/supervisors')
 
 # Notice how both of these share the '/api/admin' prefix! 
 # Flask will automatically merge them together perfectly.
