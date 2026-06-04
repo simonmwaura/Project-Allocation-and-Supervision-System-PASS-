@@ -508,7 +508,7 @@ def delete_user_account(target_user_id):
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
     
 # ==========================================
-# 10. SYSTEM RESET (FIXED WITH AUTO-REBUILD)
+# 10. SYSTEM RESET (FIXED FOREGIN KEY CONSTRAINTS)
 # ==========================================
 @user_bp.route('/system-reset', methods=['POST'])
 @jwt_required()
@@ -523,7 +523,6 @@ def system_reset():
         data = request.get_json()
         target = data.get('target')
 
-        # DELETE HIERARCHY: Always delete children before parents
         # 1. Delete all attachments and submissions (Leaves)
         db.session.query(Upload_log).delete() 
         db.session.query(Submission_Attachment).delete()
@@ -535,38 +534,41 @@ def system_reset():
         db.session.query(Supervisor_Interest).delete()
         db.session.query(Research_Tag).delete()
         db.session.query(Broadcast).delete()
+
+        # --- THE FIX: ORDER OF DELETION MATTERS ---
         
-        # 3. Target-specific deletions
+        # 3. Handle Students FIRST (because they rely on Supervisors)
+        if target in ['students', 'all']:
+            db.session.query(Student).delete()
+            db.session.query(User).filter(User.user_role == 'Student').delete(synchronize_session=False)
+
+        # 4. Handle Faculty SECOND
         if target in ['faculty', 'all']:
+            # CRITICAL: If we are ONLY wiping faculty, we must unassign the surviving students first!
+            if target == 'faculty':
+                db.session.query(Student).update({Student.assigned_supervisor_id: None}, synchronize_session=False)
+            
             db.session.query(CoordinatorHistory).delete()
             db.session.query(Coordinator).delete()
             db.session.query(Panel).delete()
             db.session.query(Supervisor).delete()
-            # Delete associated User accounts
             db.session.query(User).filter(User.user_role.in_(['Supervisor', 'Coordinator'])).delete(synchronize_session=False)
 
-        if target in ['students', 'all']:
-            db.session.query(Student).delete()
-            # Delete associated User accounts
-            db.session.query(User).filter(User.user_role == 'Student').delete(synchronize_session=False)
-
+        # 5. Handle Global Wipe and Milestone Resurrect
         if target == 'all':
             # Wipe clean everything left in Users except Admin
             db.session.query(User).filter(User.user_id != current_user_id).delete(synchronize_session=False)
 
             # --- THE NUKE & RESURRECTION OF MILESTONES ---
             db.session.query(Milestone).delete()
-
-            # 1. Ensure an active cycle exists so we have an ID to attach to
+            
             cycle = AcademicCycle.query.filter_by(is_active=True).first()
             if not cycle:
                 cycle = AcademicCycle(label="2025/2026", is_active=True)
                 db.session.add(cycle)
-                db.session.flush() # Flushes to the database to generate the cycle_id without committing yet
+                db.session.flush()
 
             now = datetime.utcnow()
-            
-            # 2. Re-inject the default milestones
             default_milestones = [
                 Milestone(milestone_name="Project Proposal", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=2)),
                 Milestone(milestone_name="Final Presentation & Report", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=15)),
@@ -576,7 +578,6 @@ def system_reset():
             ]
             db.session.bulk_save_objects(default_milestones)
 
-        # Commit everything at once. If any of the above fails, the whole thing rolls back.
         db.session.commit()
         return jsonify({"status": "success", "message": "System reset completed. Defaults restored."}), 200
 
