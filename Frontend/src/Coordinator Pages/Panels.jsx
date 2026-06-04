@@ -4,7 +4,7 @@ import { FiUsers, FiPlus, FiGrid, FiArrowRight, FiTrash2 } from "react-icons/fi"
 import { toast } from "react-toastify";
 import CreatePanelModal from "./Coordinator Panel Components/CreatePanelModal"
 
-const BRAND = "#2b20d6";
+const BRAND = "#302AE2"; // Locked to your exact theme
 
 // ─── Modern Empty State ──────────────────────────────────────────────────────
 const NoPanels = ({ onSetup }) => (
@@ -38,13 +38,13 @@ const PanelCard = ({ panel, onSetup, onDelete }) => (
     {/* --- Delete Individual Panel --- */}
     <button 
       onClick={() => onDelete(panel.panelId)}
-      className="absolute top-4 right-4 p-1.5 rounded-full text-red-500 hover:bg-red-50 transition-colors"
+      className="absolute top-4 right-4 p-1.5 rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
       title="Delete Panel"
     >
       <FiTrash2 size={18} />
     </button>
 
-    <h3 className="text-xl font-extrabold text-[#2b20d6]">Panel {panel.panelNumber}</h3>
+    <h3 className="text-xl font-extrabold" style={{ color: BRAND }}>Panel {panel.panelNumber}</h3>
     <p className="text-sm text-gray-400 font-semibold uppercase tracking-tighter">Coordinator Selection</p>
 
     <div className="space-y-3 py-2">
@@ -56,8 +56,8 @@ const PanelCard = ({ panel, onSetup, onDelete }) => (
       {/* --- Progress bar updated to calculate out of 4 members --- */}
       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-blue-500 rounded-full" 
-          style={{ width: `${(panel.memberCount / 4) * 100}%` }}
+          className="h-full rounded-full transition-all duration-500" 
+          style={{ width: `${(panel.memberCount / 4) * 100}%`, backgroundColor: BRAND }}
         />
       </div>
       
@@ -71,7 +71,8 @@ const PanelCard = ({ panel, onSetup, onDelete }) => (
     {/* --- Configure Panel Button --- */}
     <button
       onClick={() => onSetup(panel.panelId)}
-      className="mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-[#2b20d6] text-[#2b20d6] bg-[#eef0fb] hover:bg-[#2b20d6] hover:text-white transition-all duration-300 ease-in-out"
+      className="mt-2 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm border-2 text-[#302AE2] bg-[#eef0fb] hover:bg-[#302AE2] hover:text-white transition-all duration-300 ease-in-out"
+      style={{ borderColor: BRAND }}
     >
       Configure Panel →
     </button>
@@ -82,12 +83,12 @@ const PanelCard = ({ panel, onSetup, onDelete }) => (
 const AddPanelCard = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="rounded-3xl border-4 border-dashed border-indigo-100 flex flex-col items-center justify-center gap-4 hover:border-[#2b20d6] hover:bg-white transition-all min-h-[280px] group"
+    className="rounded-3xl border-4 border-dashed border-indigo-100 flex flex-col items-center justify-center gap-4 hover:border-[#302AE2] hover:bg-white transition-all min-h-[280px] group"
   >
-    <div className="w-16 h-16 rounded-full border-4 border-dashed border-indigo-100 group-hover:border-[#2b20d6] flex items-center justify-center transition-all">
-      <FiPlus size={32} className="text-indigo-200 group-hover:text-[#2b20d6]" />
+    <div className="w-16 h-16 rounded-full border-4 border-dashed border-indigo-100 group-hover:border-[#302AE2] flex items-center justify-center transition-all">
+      <FiPlus size={32} className="text-indigo-200 group-hover:text-[#302AE2]" />
     </div>
-    <p className="font-black text-lg text-indigo-200 group-hover:text-[#2b20d6]">Add a Panel</p>
+    <p className="font-black text-lg text-indigo-200 group-hover:text-[#302AE2]">Add a Panel</p>
   </button>
 );
 
@@ -101,7 +102,8 @@ const Panels = () => {
   const fetchPanels = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:5000/api/coordinator/panels", {
+      // FIXED BUG: Changed /coordinator/ to /coordinators/ to match your Flask blueprint
+      const res = await fetch("http://127.0.0.1:5000/api/coordinators/panels", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await res.json();
@@ -119,7 +121,7 @@ const Panels = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:5000/api/coordinator/panels/delete-all", {
+      const res = await fetch("http://127.0.0.1:5000/api/coordinators/panels/delete-all", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -137,7 +139,7 @@ const Panels = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:5000/api/coordinator/panels/${panelId}`, {
+      const res = await fetch(`http://127.0.0.1:5000/api/coordinators/panels/${panelId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -162,7 +164,7 @@ const Panels = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:5000/api/coordinator/generate-panels", {
+      const res = await fetch("http://127.0.0.1:5000/api/coordinators/generate-panels", {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -197,23 +199,24 @@ const Panels = () => {
       {panels.length === 0 ? (
         <NoPanels onSetup={() => setShowCreate(true)} />
       ) : (
-        <div className="flex-1 overflow-y-auto px-2 pb-10">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-10">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 pt-4">
             <div>
-              <h2 className="text-4xl font-black mb-1" style={{ color: BRAND }}>Panels</h2>
+              <h2 className="text-3xl md:text-4xl font-black mb-1" style={{ color: BRAND }}>Panels</h2>
               <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Academic Examination Committee</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleDeleteAll}
-                className="px-6 py-3 border-2 border-red-100 text-red-500 rounded-2xl font-bold hover:bg-red-50 transition-all"
+                className="px-6 py-3 border-2 border-red-100 text-red-500 rounded-2xl font-bold hover:bg-red-50 transition-all text-sm md:text-base"
               >
                 Clear All
               </button>
               {panels.length < 6 && (
                 <button
                     onClick={() => setShowCreate(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#2b20d6] text-white rounded-2xl font-bold shadow-lg hover:scale-105 transition-all"
+                    className="flex items-center gap-2 px-6 py-3 text-white rounded-2xl font-bold shadow-lg hover:scale-105 transition-all text-sm md:text-base"
+                    style={{ backgroundColor: BRAND }}
                 >
                     <FiPlus size={20} /> New Panel
                 </button>
@@ -221,7 +224,7 @@ const Panels = () => {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
             {panels.map((p) => (
               <PanelCard
                 key={p.panelId}

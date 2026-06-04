@@ -9,7 +9,7 @@ const exportStudentsToCSV = (students) => {
   const headers = ["Name,Registration Number,Year,Status,Email"];
   
   const rows = students.map(s => [
-    `"${s.name.replace(/"/g, '""')}"`, // Wrap in quotes and escape existing quotes
+    `"${s.name.replace(/"/g, '""')}"`,
     s.reg, 
     s.year, 
     s.status, 
@@ -29,50 +29,45 @@ export default function ManageStudents() {
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        
-        const response = await fetch("http://127.0.0.1:5000/api/users/students", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.data && Array.isArray(data.data)) {
-          // Map the database fields perfectly
-          const formattedStudents = data.data.map(user => ({
-            id: user.id || user.user_id,
-            name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
-            email: user.email,
-            phone: user.phone || user.phone_number,
-            
-            // Using the precise keys from your Flask backend
-            reg: user.reg || user.registration_number || "Not Set", 
-            year: user.year || "2",
+  const fetchStudents = async () => {
+    try {
+      const token = localStorage.getItem("token");
       
-            // FIX: Changed 'student' to 'user' to match the map parameter
-            status: user.status === 'Accepted' ? 'Active' : user.status,
-            suspension_reason: user.suspension_reason
-          }));
-          
-          setStudents(formattedStudents);
-        } else {
-          toast.error(data.message || "Failed to fetch student data.");
+      const response = await fetch("http://127.0.0.1:5000/api/users/students", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
-      } catch (error) {
-        console.error("Error fetching students:", error);
-        toast.error("Could not connect to the server.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      });
 
+      const data = await response.json();
+
+      if (response.ok && data.data && Array.isArray(data.data)) {
+        const formattedStudents = data.data.map(user => ({
+          id: user.id || user.user_id,
+          name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
+          email: user.email,
+          phone: user.phone || user.phone_number,
+          reg: user.reg || user.registration_number || "Not Set", 
+          year: user.year || "2",
+          status: user.status === 'Accepted' ? 'Active' : user.status,
+          suspension_reason: user.suspension_reason
+        }));
+        
+        setStudents(formattedStudents);
+      } else {
+        toast.error(data.message || "Failed to fetch student data.");
+      }
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      toast.error("Could not connect to the server.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStudents();
   }, []);
 
@@ -85,8 +80,11 @@ export default function ManageStudents() {
         ) : students.length === 0 ? (
             <NoStudentFound />
         ) : (
-            <StudentDashboardView students={students} 
-            onExport={() => exportStudentsToCSV(students)}/>
+            <StudentDashboardView 
+              students={students} 
+              onExport={() => exportStudentsToCSV(students)}
+              refreshData={fetchStudents} 
+            />
         )}
     </div>
   );

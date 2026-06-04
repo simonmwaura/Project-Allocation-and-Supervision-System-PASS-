@@ -117,19 +117,29 @@ export default function ManageCoordinators({ availableFaculty = [] }) {
       <div className="w-full h-full flex flex-col items-center">
         <div className="w-full max-w-4xl bg-[#fbfbfd] border border-blue-200 rounded-[1.5rem] p-6 lg:p-10 flex flex-col shadow-sm relative">
           
-          <button
-            onClick={() => setSelectedYear(null)}
-            className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white shadow-md hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: BRAND }}
-          >
-            <FiArrowLeft size={18} strokeWidth={3} />
-            Back to coordinators
-          </button>
+         <div className="flex flex-col sm:flex-row items-center justify-between w-full mb-10 gap-4 sm:gap-0">
+            {/* Left: Back Button */}
+            <div className="w-full sm:w-1/3 flex justify-start z-10">
+              <button
+                onClick={() => setSelectedYear(null)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white shadow-md hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: BRAND }}
+              >
+                <FiArrowLeft size={18} strokeWidth={3} />
+                Back to coordinators
+              </button>
+            </div>
 
-          <h2 className="text-xl sm:text-2xl font-extrabold text-center mb-10 mt-12 sm:mt-0" style={{ color: BRAND }}>
-            {selectedYear}th Year Coordinator Details
-          </h2>
+            {/* Center: Title */}
+            <div className="w-full sm:w-1/3 text-center pointer-events-none">
+              <h2 className="text-xl sm:text-2xl font-extrabold whitespace-nowrap" style={{ color: BRAND }}>
+                {selectedYear === 2 ? "2nd" : `${selectedYear}th`} Year Coordinator Details
+              </h2>
+            </div>
 
+            {/* Right: Invisible Spacer (Ensures title stays centered) */}
+            <div className="w-full sm:w-1/3 hidden sm:block"></div>
+          </div>
           <div className="flex flex-col items-center w-full gap-8">
             <div className="w-full max-w-md bg-white border rounded-2xl p-6 flex flex-col items-center shadow-sm" style={{ borderColor: BRAND }}>
               <h3 className="font-extrabold text-gray-900 mb-4 text-[15px]">Current Coordinator</h3>

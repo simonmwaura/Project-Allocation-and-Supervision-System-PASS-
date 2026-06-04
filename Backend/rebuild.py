@@ -1,24 +1,24 @@
 import os
 from datetime import datetime, timedelta
 from app import app
-from models import db, User, Milestone, AcademicCycle
+from models import db, Milestone, AcademicCycle
 
-def rebuild():
+def restore_milestones():
     with app.app_context():
-        print("🚀 Rebuilding database (Empty State with ONLY Admin)...")
+        print("🚀 Restoring Milestones...")
 
-        db.drop_all()
-        db.create_all()
-        print("✅ Tables recreated.")
+        # 1. Get the current active cycle (so we attach them to the right year)
+        cycle = AcademicCycle.query.filter_by(is_active=True).first()
+        
+        if not cycle:
+            print("⚠️ No active cycle found. Creating one...")
+            cycle = AcademicCycle(label="2025/2026", is_active=True)
+            db.session.add(cycle)
+            db.session.flush()
 
-        # ── Academic Cycle ────────────────────────────────────────────────
-        now   = datetime.utcnow()
-        cycle = AcademicCycle(label="2025/2026", is_active=True)
-        db.session.add(cycle)
-        db.session.flush()
-        print("✅ Academic cycle created.")
-
-        # ── Milestones ────────────────────────────────────────────────────
+        now = datetime.utcnow()
+        
+        # 2. Define the exact milestones from your original script
         milestones = [
             Milestone(milestone_name="Project Proposal", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=2)),
             Milestone(milestone_name="Final Presentation & Report", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=15)),
@@ -26,27 +26,16 @@ def rebuild():
             Milestone(milestone_name="Semester 2: Progress Report", cycle_id=cycle.cycle_id, year='4', is_required=True, due_date=now + timedelta(weeks=18)),
             Milestone(milestone_name="Final Presentation & Report", cycle_id=cycle.cycle_id, year='4', is_required=True, due_date=now + timedelta(weeks=30)),
         ]
-        db.session.bulk_save_objects(milestones)
-        db.session.commit()
-        print("✅ Milestones created.")
 
-        # ── THE SINGLE MASTER ADMIN ───────────────────────────────────────
         try:
-            admin_user = User(
-                first_name="System",
-                last_name="Administrator",
-                email="smmx2005@gmail.com",  # Match the MASTER_ADMIN_EMAIL in your route
-                user_role="Administrator",
-                account_status="Accepted"
-            )
-            db.session.add(admin_user)
+            # 3. Clear any weird ghost milestones just in case, then bulk save
+            db.session.query(Milestone).delete()
+            db.session.bulk_save_objects(milestones)
             db.session.commit()
-            print("✅ Master Admin Account successfully injected.")
+            print("✅ Milestones successfully restored!")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Failed to inject Admin account: {e}")
-
-        print("\n✨ Rebuild complete. Database is locked and ready for CSV uploads via the UI.")
+            print(f"❌ Failed to restore milestones: {e}")
 
 if __name__ == "__main__":
-    rebuild()
+    restore_milestones()

@@ -12,7 +12,6 @@ import StudentAccountDetails from "./StudentAccountDetails";
 
 const BRAND = "#2b20d6";
 
-// --- Metric Card ---
 const MetricCard = ({ icon: Icon, title, value, color, bgClass, textColor }) => {
   return (
     <div className={`border-[1.5px] rounded-2xl p-5 lg:p-6 flex items-center justify-between shadow-sm ${bgClass}`} style={{ borderColor: color }}>
@@ -32,7 +31,6 @@ const MetricCard = ({ icon: Icon, title, value, color, bgClass, textColor }) => 
   );
 };
 
-// --- Status Badge ---
 const StatusBadge = ({ status }) => {
   if (status === "Active") return <span className="px-4 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Active</span>;
   if (status === "Pending") return <span className="px-4 py-1 rounded-full border border-yellow-400 text-gray-800 bg-yellow-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Pending</span>;
@@ -40,7 +38,7 @@ const StatusBadge = ({ status }) => {
   return null;
 };
 
-const StudentDashboardView = ({ students, onExport }) => {
+const StudentDashboardView = ({ students, onExport, refreshData }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [yearFilter, setYearFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -65,10 +63,15 @@ const StudentDashboardView = ({ students, onExport }) => {
     });
   }, [students, searchQuery, yearFilter, statusFilter]);
 
+  const handleBackFromDetails = () => {
+    setSelectedStudent(null);
+    if (refreshData) refreshData(); // Refreshes the table so changes from details view show up immediately
+  };
+
   if (selectedStudent) {
       return (
           <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
-              <StudentAccountDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
+              <StudentAccountDetails student={selectedStudent} onBack={handleBackFromDetails} />
           </div>
       );
   }
@@ -76,7 +79,6 @@ const StudentDashboardView = ({ students, onExport }) => {
   return (
     <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col items-center shadow-sm" style={{ borderColor: BRAND }}>
       
-      {/* --- HEADER --- */}
       <div className="flex flex-col sm:flex-row justify-between items-center w-full mb-8 sm:mb-10 gap-4">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-center" style={{ color: BRAND }}>
           Student Account Management
@@ -90,7 +92,6 @@ const StudentDashboardView = ({ students, onExport }) => {
         </button>
       </div>
 
-      {/* 1. Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">
         <MetricCard icon={FiUsers} title="Total Students" value={totalStudents} color={BRAND} bgClass="bg-blue-50/30" />
         <MetricCard icon={FiUserCheck} title="Active Accounts" value={activeStudents} color="#16a34a" bgClass="bg-green-50/50" />
@@ -98,7 +99,6 @@ const StudentDashboardView = ({ students, onExport }) => {
         <MetricCard icon={FiUserX} title="Suspended" value={suspendedStudents} color="#ef4444" bgClass="bg-red-50/50" />
       </div>
       
-      {/* 2. Filter & Search Bar */}
       <div className="flex flex-col lg:flex-row gap-4 w-full max-w-5xl mb-8">
         <div className="flex-1 flex items-center gap-3 px-5 py-3 border-[1.5px] border-gray-300 rounded-full shadow-sm bg-white focus-within:border-[#2b20d6] transition-colors">
           <input
@@ -162,7 +162,6 @@ const StudentDashboardView = ({ students, onExport }) => {
         </div>
       </div>
 
-      {/* 3. Data Table */}
       <div className="w-full max-w-5xl overflow-x-auto mt-2 pb-4">
         <table className="w-full border-collapse border-[1.5px] min-w-[800px]" style={{ borderColor: BRAND }}>
           <thead>

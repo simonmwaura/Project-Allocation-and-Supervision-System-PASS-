@@ -16,10 +16,8 @@ const SupervisorInterestsSetup = ({ supervisorName = "Supervisor", onComplete })
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // New state variables for the Supervisor model fields
+  // Updated state without capacity fields
   const [formData, setFormData] = useState({
-    year2Capacity: 5,
-    year4Capacity: 5,
     officeLocation: "",
     officeHours: "",
     bio: ""
@@ -47,10 +45,10 @@ const SupervisorInterestsSetup = ({ supervisorName = "Supervisor", onComplete })
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Updated payload without capacity fields
       const payload = {
         interests: selectedInterests,
-        max_2nd_year_capacity: parseInt(formData.year2Capacity),
-        max_4th_year_capacity: parseInt(formData.year4Capacity),
         office_location: formData.officeLocation,
         office_hours: formData.officeHours,
         bio: formData.bio
@@ -97,31 +95,11 @@ const SupervisorInterestsSetup = ({ supervisorName = "Supervisor", onComplete })
             </p>
           </div>
 
-          {/* Two-Column Layout for Desktop */}
           <div className="flex flex-col lg:flex-row gap-12 w-full mb-10">
             
             {/* LEFT COLUMN: Logistics & Bio */}
             <div className="flex-1 flex flex-col gap-5">
               <h3 className="font-bold text-xl text-gray-800 border-b pb-2">Logistics & Bio</h3>
-              
-              <div className="flex gap-4">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm font-bold text-gray-600">2nd Year Capacity</label>
-                  <input 
-                    type="number" min="0" name="year2Capacity"
-                    value={formData.year2Capacity} onChange={handleInputChange}
-                    className="border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-blue-600 font-medium"
-                  />
-                </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm font-bold text-gray-600">4th Year Capacity</label>
-                  <input 
-                    type="number" min="0" name="year4Capacity"
-                    value={formData.year4Capacity} onChange={handleInputChange}
-                    className="border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-blue-600 font-medium"
-                  />
-                </div>
-              </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-bold text-gray-600">Office Location</label>

@@ -10,7 +10,7 @@ import os
 from models import (
     db, User, Student, Supervisor, Project_Pitch, 
     Supervisor_Interest, Research_Tag, Student_Submission, 
-    Submission_Attachment, Milestone # Added Milestone and corrected Attachment name
+    Submission_Attachment, Milestone ,Broadcast# Added Milestone and corrected Attachment name
 )
 
 
@@ -552,3 +552,46 @@ def download_student_file(filename):
     except Exception as e:
         print(f"\n=== STUDENT DOWNLOAD ERROR: {str(e)} ===\n")
         return jsonify({"status": "error", "message": "Failed to download file."}), 500
+    
+# ==========================================
+# GET STUDENT BROADCASTS (NOTICES)
+# ==========================================
+@student_bp.route('/broadcasts', methods=['GET'], strict_slashes=False)
+@jwt_required()
+def get_student_broadcasts():
+    try:
+        user_id = get_jwt_identity()
+        student = Student.query.filter_by(user_id=user_id).first()
+        
+        if not student:
+            return jsonify({"status": "error", "message": "Student profile not found"}), 404
+
+        # Fetch broadcasts matching the student's year, newest first
+        broadcasts = Broadcast.query.filter_by(broadcast_year=student.year)\
+                                    .order_by(Broadcast.broadcast_id.desc()).all()
+        
+        data = []
+        for b in broadcasts:
+            # Safely get the author's name
+            author_name = "Coordinator"
+            if b.author and b.author.coordinator_supervisor and b.author.coordinator_supervisor.supervisor_user:
+                user_info = b.author.coordinator_supervisor.supervisor_user
+                author_name = f"Dr. {user_info.first_name} {user_info.last_name}"
+
+            date_str = "Recently"
+            if hasattr(b, 'created_at') and b.created_at:
+                date_str = b.created_at.strftime("%b %d")
+
+            data.append({
+                "id": b.broadcast_id,
+                "title": b.title,
+                "message": b.message,
+                "date": date_str,
+                "author": f"{author_name} - Project Coordinator",
+                "year": b.broadcast_year
+            })
+
+        return jsonify({"status": "success", "data": data}), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

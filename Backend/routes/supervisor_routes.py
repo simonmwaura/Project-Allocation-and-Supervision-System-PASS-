@@ -482,26 +482,31 @@ def approve_pitch(pitch_id):
 
         student = Student.query.get(pitch.student_id)
 
-        # Check capacity before approving
+        # Check capacity before approving (Defaults to 5 if not set in DB)
         filled = Student.query.filter_by(
             assigned_supervisor_id=supervisor.supervisor_id, year=student.year
         ).count()
-        max_cap = supervisor.max_2nd_year_capacity if student.year == '2' else supervisor.max_4th_year_capacity
+        
+        if student.year == '2':
+            max_cap = supervisor.max_2nd_year_capacity or 5
+        else:
+            max_cap = supervisor.max_4th_year_capacity or 5
 
         if filled >= max_cap:
-            return jsonify({"status": "error", "message": "You have reached your capacity for this year group."}), 400
+            return jsonify({"status": "error", "message": f"You have reached your capacity limit ({max_cap} students) for this year group."}), 400
 
         pitch.status = 'Accepted'
         student.assigned_supervisor_id = supervisor.supervisor_id
 
-        # Withdraw all other pending pitches from this student
+        # SAFE WITHDRAWAL: Set other pending pitches to 'Declined' to avoid ENUM database crashes
         other_pitches = Project_Pitch.query.filter(
             Project_Pitch.student_id == student.student_id,
             Project_Pitch.pitch_id != pitch_id,
             Project_Pitch.status == 'Pending'
         ).all()
         for other in other_pitches:
-            other.status = 'Withdrawn'
+            other.status = 'Declined'
+            other.decline_reason = 'System Auto-Decline: Student was accepted by another supervisor.'
 
         db.session.commit()
         return jsonify({"status": "success", "message": "Student assigned successfully!"}), 200
@@ -509,7 +514,7 @@ def approve_pitch(pitch_id):
     except Exception as e:
         db.session.rollback()
         print(f"\n\n=== APPROVE ERROR: {str(e)} ===\n\n")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "A server error occurred. Please try again."}), 500
 
 
 # ==========================================
@@ -530,8 +535,10 @@ def decline_pitch(pitch_id):
         if not pitch:
             return jsonify({"status": "error", "message": "Pitch not found or already actioned."}), 404
 
-        data = request.get_json()
-        pitch.status         = 'Declined'
+        # FIX: Added silent=True and fallback dictionary to prevent NoneType crashes
+        data = request.get_json(silent=True) or {}
+        
+        pitch.status = 'Declined'
         pitch.decline_reason = data.get('decline_reason', '').strip()
 
         db.session.commit()
@@ -543,6 +550,9 @@ def decline_pitch(pitch_id):
         return jsonify({"status": "error", "message": str(e)}), 500
     
  
+# ==========================================
+# GET: My Panel
+# ==========================================
 @supervisor_bp.route('/my-panel', methods=['GET'])
 @jwt_required()
 def get_my_panel():
@@ -581,11 +591,10 @@ def get_my_panel():
             for student in students:
                 student_user = User.query.get(student.user_id)
  
-                # Get their accepted pitch for the project title
+                # THE FIX: Only query for 'Accepted' to prevent the ENUM crash
                 accepted_pitch = Project_Pitch.query.filter(
                     Project_Pitch.student_id == student.student_id,
-                    # THIS IS THE BROKEN LINE:
-                    Project_Pitch.status.in_(['Accepted', 'Approved', 'Assigned'])
+                    Project_Pitch.status == 'Accepted' 
                 ).first()
  
                 project_title = accepted_pitch.project_title if accepted_pitch else "Untitled Project"
@@ -643,7 +652,6 @@ def get_my_panel():
     except Exception as e:
         print(f"\n\n=== MY PANEL ERROR: {str(e)} ===\n\n")
         return jsonify({"status": "error", "message": str(e)}), 500
- 
 # ==========================================
 # GET: Download a student submission file
 # ==========================================

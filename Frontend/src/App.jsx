@@ -2,12 +2,18 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Temporary Page
 import LandingPage from './LandingPage/LandingPage';
+import LoginPage from './LandingPage/LoginPage';
 
 // Student Routes
 import StudentDashboard from './Student Pages/StudentDashboard';
 import MyProject from './Student Pages/MyProject';
 import Profile from './Student Pages/Profile';
-import StudentWrapper from './Student Pages/Student Components/StudentWrapper';
+import StudentWrapper from './Student Pages/Student Components/StudentWrapper'
+import ProjectOverview from "./Student Pages/Student Dashboard Components/ProjectOverview"
+import CoordinatorNotices from "./Student Pages/Student MyProject Components/CoordinatorNotices"
+import SubmissionHistory from "./Student Pages/Student MyProject Components/SubmissionHistory"
+import UploadDocuments from "./Student Pages/Student MyProject Components/UploadDocuments"
+
 
 // Supervisor Routes
 import SupervisorDashboard from './Supervisor Pages/SupervisorDashboard';
@@ -15,6 +21,7 @@ import MySupervisees from './Supervisor Pages/MySupervisees';
 import MyPanel from './Supervisor Pages/MyPanel';
 import SupervisorProfile from './Supervisor Pages/SupervisiorProfile';
 import SupervisorWrapper from './Supervisor Pages/Supervisor Components/SupervisorWrapper';
+import EditResearchInterests from './Supervisor Pages/EditResearchInterests'
 
 // Administrator Routes
 import AdministratorLayout from './Administrator Pages/Administrator Component/AdministratorLayout';
@@ -32,18 +39,24 @@ import CoordinatorSupervisors from "./Coordinator Pages/CoordinatorSupervisors";
 import CoordinatorPanels from "./Coordinator Pages/Panels"; 
 import CoordinatorProfile from "./Coordinator Pages/CoordinatorProfile";
 import CoordinatorWrapper from './Coordinator Pages/Coordinatorcomponents/CoordinatorWrapper';
+import PanelSetup from './Coordinator Pages/Coordinator Panel Components/PanelSetup';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
 
         {/* ── Student portal ──────────────────────────────────────────── */}
         <Route path="/student" element={<StudentWrapper />}>
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="myproject" element={<MyProject />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="project-details" element={<ProjectOverview />} />
+          <Route path="coordinator-notices" element={<CoordinatorNotices/>}/>
+          <Route path="submission-history" element = {<SubmissionHistory/>}/>
+          <Route path="upload-document" element={<UploadDocuments/>}/>
         </Route>
 
         {/* ── Supervisor portal ───────────────────────────────────────── */}
@@ -52,6 +65,9 @@ function App() {
           <Route path="mysupervisees" element={<MySupervisees />} />
           <Route path="mypanel" element={<MyPanel />} />
           <Route path="profile" element={<SupervisorProfile />} />
+          <Route path="edit-interests" element={<EditResearchInterests />} />
+          
+
         </Route>
 
         {/* ── Coordinator portal ──────────────────────────────────────── */}
@@ -61,6 +77,7 @@ function App() {
           <Route path="supervisors" element={<CoordinatorSupervisors />} />
           <Route path="panels" element={<CoordinatorPanels />} /> 
           <Route path="profile" element={<CoordinatorProfile />} />
+          <Route path="panels/:id" element={<PanelSetup />} />
         </Route>
 
         {/* ── Administrator portal ────────────────────────────────────── */}

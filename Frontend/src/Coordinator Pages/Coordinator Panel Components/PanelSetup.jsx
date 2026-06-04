@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiUsers, FiUser, FiHash, FiPlus, FiArrowLeft } from "react-icons/fi";
+import { FiUsers, FiUser, FiHash, FiPlus, FiArrowLeft, FiShield } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-const BRAND = "#2b20d6";
+const BRAND = "#302AE2"; // Locked to your strict theme
 
 // ─── ADD SUPERVISOR MODAL ────────────────────────────────────────────────────
 const AddSupervisorModal = ({ isOpen, onClose, onAdd, panelId }) => {
@@ -17,7 +17,8 @@ const AddSupervisorModal = ({ isOpen, onClose, onAdd, panelId }) => {
       const fetchEligible = async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch(`http://127.0.0.1:5000/api/coordinator/panels/${panelId}/eligible-supervisors`, {
+          // FIXED BUG: plural /coordinators/
+          const res = await fetch(`http://127.0.0.1:5000/api/coordinators/panels/${panelId}/eligible-supervisors`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
@@ -39,13 +40,15 @@ const AddSupervisorModal = ({ isOpen, onClose, onAdd, panelId }) => {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
-        <h3 className="text-2xl font-bold mb-2 text-[#2b20d6]">Add Supervisor</h3>
+        <h3 className="text-2xl font-bold mb-2" style={{ color: BRAND }}>Add Supervisor</h3>
         <p className="text-sm text-gray-400 mb-6 font-medium">Showing available supervisors with active accounts.</p>
         
         <input 
           type="text" 
           placeholder="Search by name..."
-          className="w-full h-12 px-5 rounded-2xl border-2 border-[#eef0fb] focus:border-[#2b20d6] outline-none mb-4 font-medium"
+          className="w-full h-12 px-5 rounded-2xl border-2 border-gray-100 outline-none mb-4 font-medium transition-colors"
+          onFocus={(e) => e.target.style.borderColor = BRAND}
+          onBlur={(e) => e.target.style.borderColor = "#f3f4f6"}
           onChange={(e) => setSearch(e.target.value)}
         />
 
@@ -57,13 +60,15 @@ const AddSupervisorModal = ({ isOpen, onClose, onAdd, panelId }) => {
               <button 
                 key={s.id}
                 onClick={() => onAdd(s.id)}
-                className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-[#eef0fb] transition-all group border border-transparent hover:border-[#2b20d6]/10"
+                className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-blue-50 transition-all group border border-transparent"
               >
                 <div className="text-left">
                   <p className="font-bold text-gray-800">{s.name}</p>
                   <p className="text-xs text-gray-400 font-medium">{s.email}</p>
                 </div>
-                <FiPlus className="text-[#2b20d6] opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: BRAND }}>
+                  <FiPlus size={20} />
+                </div>
               </button>
             ))
           ) : (
@@ -73,7 +78,7 @@ const AddSupervisorModal = ({ isOpen, onClose, onAdd, panelId }) => {
 
         <button 
           onClick={onClose}
-          className="w-full mt-6 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition-all"
+          className="w-full mt-6 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all"
         >
           Cancel
         </button>
@@ -88,7 +93,7 @@ const PanelSetup = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [showAddSup, setShowAddSup] = useState(false); // Modal state
+  const [showAddSup, setShowAddSup] = useState(false);
   
   const [panel, setPanel] = useState(null);
   const [capacity, setCapacity] = useState(4);
@@ -97,7 +102,8 @@ const PanelSetup = () => {
   const fetchPanelDetails = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:5000/api/coordinator/panels/${id}`, {
+      // FIXED BUG: plural /coordinators/
+      const res = await fetch(`http://127.0.0.1:5000/api/coordinators/panels/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -125,7 +131,8 @@ const PanelSetup = () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:5000/api/coordinator/panels/${id}/settings`, {
+      // FIXED BUG: plural /coordinators/
+      const res = await fetch(`http://127.0.0.1:5000/api/coordinators/panels/${id}/settings`, {
         method: "PUT",
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -148,11 +155,11 @@ const PanelSetup = () => {
     }
   };
 
-  // Add Supervisor function
   const handleAddSupervisor = async (supId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:5000/api/coordinator/panels/${id}/add-member`, {
+      // FIXED BUG: plural /coordinators/
+      const res = await fetch(`http://127.0.0.1:5000/api/coordinators/panels/${id}/add-member`, {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -165,7 +172,7 @@ const PanelSetup = () => {
       if (res.ok) {
         toast.success("Supervisor added!");
         setShowAddSup(false);
-        fetchPanelDetails(); // Refresh to show new counts
+        fetchPanelDetails(); 
       } else {
         toast.error(data.message || "Failed to add supervisor");
       }
@@ -176,9 +183,9 @@ const PanelSetup = () => {
 
   if (isLoading || !panel) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center animate-pulse h-full">
-        <FiUsers size={64} className="text-indigo-200 mb-4" />
-        <p className="text-xl font-black text-indigo-300">Loading Panel Data...</p>
+      <div className="flex-1 flex flex-col items-center justify-center animate-pulse h-full min-h-[50vh]">
+        <FiUsers size={64} style={{ color: BRAND }} className="opacity-50 mb-4" />
+        <p className="text-xl font-black" style={{ color: BRAND }}>Loading Panel Data...</p>
       </div>
     );
   }
@@ -186,146 +193,178 @@ const PanelSetup = () => {
   const members = panel.members || [];
 
  return (
-    <div className="flex flex-col h-full overflow-y-auto pb-10 px-4 relative">
+    <div className="flex flex-col h-full overflow-y-auto pb-12 px-4 md:px-6 relative">
       
-      {/* ─── CENTERING WRAPPER ─── */}
       <div className="w-full max-w-5xl mx-auto">
         
         {/* ─── HEADER ─────────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-8 mt-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: BRAND }}
-          >
-            <FiArrowLeft size={18} />
-            Back to Panels
-          </button>
-          <h2 className="text-3xl font-extrabold text-[#2b20d6]">
-            Panel {panel.panelNumber} Setup
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-4 pt-2">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-500 hover:text-[#302AE2] hover:border-[#302AE2] transition-colors"
+              title="Back to Panels"
+            >
+              <FiArrowLeft size={20} />
+            </button>
+            <div>
+              <h2 className="text-3xl md:text-4xl font-extrabold" style={{ color: BRAND }}>
+                Panel {panel.panelNumber}
+              </h2>
+              <p className="text-gray-500 font-semibold text-sm">Configuration & Members</p>
+            </div>
+          </div>
         </div>
 
         {/* ─── MAIN GRID ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           
           {/* 1. SUMMARY CARD */}
-          <div className="bg-white rounded-[24px] border-2 border-[#eef0fb] p-8 shadow-sm flex flex-col items-center">
-            <FiUsers size={48} style={{ color: BRAND }} className="mb-2" />
-            <h3 className="text-2xl font-bold mb-4" style={{ color: BRAND }}>
-              Panel {panel.panelNumber}
+          <div className="bg-white rounded-[24px] border-2 border-gray-100 p-8 shadow-sm flex flex-col items-center justify-center text-center">
+            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+              <FiUsers size={36} style={{ color: BRAND }} />
+            </div>
+            <h3 className="text-2xl font-bold mb-6" style={{ color: BRAND }}>
+              Overview
             </h3>
-            <div className="w-full border-t border-dashed border-gray-300 mb-4"></div>
-            <div className="w-full flex flex-col gap-3 text-sm font-semibold text-gray-800">
-              <p className="flex justify-between">
-                <span className="text-gray-500 font-bold">Panel Chair :</span> 
-                <span className={panel.chairName !== "Unassigned" ? "text-gray-800" : "text-gray-400 font-normal"}>{panel.chairName}</span>
-              </p>
-              <p className="flex justify-between">
-                <span className="text-gray-500 font-bold">Supervisors :</span> 
-                <span className="text-gray-400 font-normal">{members.length}/{panel.maxCapacity} Assigned</span>
-              </p>
-              <p className="flex justify-between">
-                <span className="text-gray-500 font-bold">Students :</span> 
-                <span className="text-gray-400 font-normal">{panel.studentCount || 0} Allocated</span>
-              </p>
+            
+            <div className="w-full flex flex-col gap-4 text-sm font-semibold text-gray-800">
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span className="text-gray-500 font-bold uppercase tracking-wider text-xs">Panel Chair</span> 
+                <span className={panel.chairName !== "Unassigned" ? "text-gray-900 font-extrabold" : "text-gray-400 italic"}>
+                  {panel.chairName}
+                </span>
+              </div>
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span className="text-gray-500 font-bold uppercase tracking-wider text-xs">Supervisors</span> 
+                <span className="text-gray-900 font-extrabold">{members.length} <span className="text-gray-400 font-medium">/ {panel.maxCapacity}</span></span>
+              </div>
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span className="text-gray-500 font-bold uppercase tracking-wider text-xs">Students</span> 
+                <span className="text-gray-900 font-extrabold">{panel.studentCount || 0} Allocated</span>
+              </div>
             </div>
           </div>
 
           {/* 2. SETTINGS CARD */}
-          <div className="bg-white rounded-[24px] border-2 border-[#eef0fb] p-8 shadow-sm">
-            <h3 className="text-xl font-bold mb-6 text-center" style={{ color: BRAND }}>
+          <div className="bg-white rounded-[24px] border-2 border-gray-100 p-8 shadow-sm">
+            <h3 className="text-xl font-bold mb-6" style={{ color: BRAND }}>
               Panel Settings
             </h3>
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-gray-400 mb-1.5 block ml-1">Panel Capacity</label>
+                <label className="text-xs font-bold text-gray-400 mb-2 block ml-1 uppercase tracking-wider">Capacity</label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2b20d6]">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <FiHash size={18} />
                   </div>
                   <select 
                     value={capacity}
                     onChange={(e) => setCapacity(parseInt(e.target.value))}
-                    className="w-full h-12 pl-12 pr-10 rounded-xl border-2 border-[#eef0fb] text-gray-700 font-medium appearance-none focus:outline-none focus:border-[#2b20d6] transition-colors bg-white cursor-pointer"
+                    className="w-full h-14 pl-12 pr-10 rounded-xl border-2 border-gray-100 text-gray-700 font-medium appearance-none outline-none transition-colors bg-white cursor-pointer"
+                    onFocus={(e) => e.target.style.borderColor = BRAND}
+                    onBlur={(e) => e.target.style.borderColor = "#f3f4f6"}
                   >
                     <option value={3}>3 Members</option>
                     <option value={4}>4 Members</option>
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                     <svg width="12" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7 7L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-400 mb-1.5 block ml-1">Panel Chair</label>
+                <label className="text-xs font-bold text-gray-400 mb-2 block ml-1 uppercase tracking-wider">Designate Chair</label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <FiUser size={18} />
                   </div>
                   <select 
                     value={chairId}
                     onChange={(e) => setChairId(e.target.value)}
-                    className="w-full h-12 pl-12 pr-10 rounded-xl border-2 border-[#eef0fb] text-gray-700 font-medium appearance-none focus:outline-none focus:border-[#2b20d6] transition-colors bg-white cursor-pointer"
+                    className="w-full h-14 pl-12 pr-10 rounded-xl border-2 border-gray-100 text-gray-700 font-medium appearance-none outline-none transition-colors bg-white cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
                     disabled={members.length === 0}
+                    onFocus={(e) => e.target.style.borderColor = BRAND}
+                    onBlur={(e) => e.target.style.borderColor = "#f3f4f6"}
                   >
                     <option value="" disabled>Select a panel chair below</option>
                     {members.map((member) => (
                       <option key={member.id} value={member.id}>{member.name}</option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                     <svg width="12" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7 7L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                 </div>
                 {members.length === 0 && (
-                  <p className="text-xs text-red-400 mt-1 ml-1">Add supervisors first to select a chair.</p>
+                  <p className="text-xs text-red-400 mt-2 ml-1 font-medium">Add supervisors first to select a chair.</p>
                 )}
               </div>
 
               <button 
                 onClick={handleSaveSettings}
                 disabled={isSaving}
-                className="w-full mt-4 h-12 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-70" 
+                className="w-full mt-2 h-14 rounded-xl font-bold text-white shadow-lg hover:opacity-90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-70" 
                 style={{ backgroundColor: BRAND }}
               >
-                {isSaving ? "Saving..." : "Save Settings"}
+                {isSaving ? "Saving..." : "Save Configuration"}
               </button>
             </div>
           </div>
 
-          {/* 3. SUPERVISORS CARD */}
-          <div className="bg-white rounded-[24px] border-2 border-[#eef0fb] p-6 shadow-sm flex flex-col justify-between min-h-[160px]">
-            <div>
-              <h3 className="text-lg font-bold mb-2" style={{ color: BRAND }}>Supervisors</h3>
-              <p className="text-sm font-medium text-gray-500">
-                {members.length} supervisors have been assigned to this panel.
-              </p>
+          {/* 3. SUPERVISORS CARD (Upgraded UI) */}
+          <div className="bg-white rounded-[24px] border-2 border-gray-100 p-8 shadow-sm flex flex-col min-h-[220px]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold" style={{ color: BRAND }}>Members</h3>
+              <span className="text-xs font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                {members.length} / {panel.maxCapacity}
+              </span>
             </div>
-            <div className="flex justify-center mt-6">
-              <button 
-                onClick={() => setShowAddSup(true)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm border-2 border-[#2b20d6] text-[#2b20d6] hover:bg-[#2b20d6] hover:text-white transition-all w-full justify-center"
-              >
-                <FiPlus size={18} />
-                Add Supervisor
-              </button>
+            
+            {/* Added: Explicit list of members */}
+            <div className="flex flex-col gap-3 mb-8 flex-1">
+              {members.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                  <FiUsers size={32} className="mb-2 opacity-50" />
+                  <p className="text-sm font-medium italic">No supervisors assigned yet.</p>
+                </div>
+              ) : (
+                members.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+                    <span className="font-bold text-gray-800 text-sm">{m.name}</span>
+                    {m.role === 'Chair' && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full">
+                        <FiShield size={10} /> CHAIR
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
+
+            <button 
+              onClick={() => setShowAddSup(true)}
+              disabled={members.length >= panel.maxCapacity}
+              className="flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm border-2 border-gray-200 text-gray-600 hover:border-[#302AE2] hover:text-[#302AE2] transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiPlus size={18} />
+              Add Supervisor
+            </button>
           </div>
 
           {/* 4. ALLOCATED STUDENTS CARD */}
-          <div className="bg-white rounded-[24px] border-2 border-[#ff3333] p-6 shadow-sm flex flex-col justify-between min-h-[160px]">
+          <div className="bg-white rounded-[24px] border-2 border-red-200 p-8 shadow-sm flex flex-col justify-between min-h-[220px]">
             <div>
-              <h3 className="text-lg font-bold mb-2 text-[#2b20d6]">Allocated Students</h3>
-              <p className="text-sm font-medium text-gray-500 leading-tight">
-                Removing students from this panel will revoke their presentation slots. Their project data will remain safe in the database.
+              <h3 className="text-xl font-bold mb-3 text-red-600">Danger Zone</h3>
+              <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                Clearing students from this panel will completely revoke their presentation slots for this academic cycle. Their uploaded project documents will remain safely stored in the database.
               </p>
             </div>
-            <div className="flex justify-end mt-6">
-              <button className="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-[#e50000] hover:bg-red-700 transition-colors shadow-sm">
-                Clear Students
+            <div className="flex justify-end mt-8">
+              <button className="px-6 py-3 rounded-xl font-bold text-sm text-red-600 bg-red-50 hover:bg-red-600 hover:text-white transition-colors border border-red-100 shadow-sm w-full sm:w-auto">
+                Clear Allocated Students
               </button>
             </div>
           </div>
@@ -333,7 +372,6 @@ const PanelSetup = () => {
         </div>
       </div>
 
-      {/* Render the modal component */}
       <AddSupervisorModal 
         isOpen={showAddSup} 
         onClose={() => setShowAddSup(false)} 

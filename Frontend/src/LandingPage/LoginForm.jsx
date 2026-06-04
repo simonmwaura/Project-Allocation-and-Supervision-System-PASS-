@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'; // <-- FIX 1: Added useEffect import
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+
+const BRAND = "#302AE2";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -11,14 +13,14 @@ const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef(null);
 
-  // FIX 2: A single helper function to handle all routing
-const handleRedirection = (role) => {
+  const handleRedirection = (role) => {
     const routes = {
       'Student': "/student/dashboard",
       'Administrator': "/administrator/dashboard",
       'Supervisor': "/supervisor/dashboard",
-      'Coordinator': "/coordinator/dashboard", // <--- ADD THIS LINE
+      'Coordinator': "/coordinator/dashboard",
       'Panel Member': "/panel/dashboard"
     };
     
@@ -42,14 +44,14 @@ const handleRedirection = (role) => {
 
       const data = await response.json();
 
-      if (res.ok) {
-  toast.success(`Welcome back, ${data.user.first_name}!`);
-  localStorage.setItem("token", data.access_token);
-  localStorage.setItem("user", JSON.stringify(data.user)); // Optional: Stores the full object
-  localStorage.setItem("user_role", data.user.role);
-  
-  handleRedirection(data.user.role);
-} else {
+      if (response.ok) {
+        toast.success(`Welcome back, ${data.user.first_name}!`);
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user)); 
+        localStorage.setItem("user_role", data.user.role);
+        
+        handleRedirection(data.user.role);
+      } else {
         toast.error(data.message || "Login failed");
       }
     } catch (error) {
@@ -60,32 +62,31 @@ const handleRedirection = (role) => {
   };
 
   useEffect(() => {
-    // We create a function to handle the initialization
     const initGoogle = () => {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse, 
       });
 
-      window.google.accounts.id.renderButton(
-        document.getElementById("googleBtn"),
-        { theme: "outline", size: "large", width: "100%" }
-      );
+      // FIXED BUG: Google SDK requires an integer (pixels) for width, not a string percentage.
+      // We pass the ref and set a specific pixel width to prevent the console crash.
+      if (googleButtonRef.current) {
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          { theme: "outline", size: "large", width: 340 } 
+        );
+      }
     };
 
-    // If Google loaded fast, render immediately
     if (window.google) {
       initGoogle();
     } else {
-      // If Google is slow, check every 100ms until it arrives
       const checkGoogle = setInterval(() => {
         if (window.google) {
-          clearInterval(checkGoogle); // Stop checking
-          initGoogle();               // Render button
+          clearInterval(checkGoogle); 
+          initGoogle();               
         }
       }, 100);
-
-      // Cleanup the interval if the user leaves the page before it loads
       return () => clearInterval(checkGoogle);
     }
   }, []);
@@ -101,14 +102,14 @@ const handleRedirection = (role) => {
 
       const data = await res.json();
 
-    if (res.ok) {
-  toast.success(`Welcome back, ${data.user.first_name}!`);
-  localStorage.setItem("token", data.access_token);
-  localStorage.setItem("user", JSON.stringify(data.user)); // Optional: Stores the full object
-  localStorage.setItem("user_role", data.user.role);
-  
-  handleRedirection(data.user.role);
-} else {
+      if (res.ok) {
+        toast.success(`Welcome back, ${data.user.first_name}!`);
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user)); 
+        localStorage.setItem("user_role", data.user.role);
+        
+        handleRedirection(data.user.role);
+      } else {
         toast.error(data.message || "Google Login failed");
       }
     } catch (error) {
@@ -119,60 +120,69 @@ const handleRedirection = (role) => {
   };
 
  return (
-    <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-lg mx-auto">
+    <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-gray-100 w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-[#2b20d6]">Welcome to PASS</h2>
-        <p className="text-gray-500 font-medium mt-2">University of Nairobi</p>
+        <h2 className="text-3xl font-black" style={{ color: BRAND }}>Welcome Back</h2>
+        <p className="text-gray-500 font-medium mt-2">Sign in to continue to PASS</p>
       </div>
 
       {/* STUDENT LOGIN SECTION */}
-      <div className="bg-[#f8faff] p-6 rounded-2xl border border-blue-100 mb-8">
-        <h3 className="text-sm font-extrabold text-[#2b20d6] uppercase tracking-wider mb-4 text-center">Student Portal</h3>
-        <div id="googleBtn" className="flex justify-center"></div>
-        <p className="text-xs text-gray-500 text-center mt-3 font-medium">
-          *All students must log in using their official UoN Google account.
+      <div className="bg-slate-50 p-6 rounded-2xl border border-gray-100 mb-8 flex flex-col items-center">
+        <h3 className="text-xs font-extrabold uppercase tracking-wider mb-5 text-center" style={{ color: BRAND }}>
+          Student Portal
+        </h3>
+        {/* Using a wrapper div to center the Google button with fixed width */}
+        <div className="flex justify-center w-full overflow-hidden">
+            <div ref={googleButtonRef}></div>
+        </div>
+        <p className="text-[11px] text-gray-500 text-center mt-4 font-semibold uppercase tracking-wider">
+          Requires official UoN Google account
         </p>
       </div>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-[1px] bg-gray-200 flex-1"></div>
-        <span className="text-gray-400 font-bold text-xs tracking-widest">STAFF & ADMIN</span>
-        <div className="h-[1px] bg-gray-200 flex-1"></div>
+        <div className="h-px bg-gray-200 flex-1"></div>
+        <span className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Staff & Admin</span>
+        <div className="h-px bg-gray-200 flex-1"></div>
       </div>
 
       {/* STAFF MANUAL LOGIN SECTION */}
-      <form onSubmit={handleManualLogin} className="space-y-6">
+      <form onSubmit={handleManualLogin} className="space-y-5">
         <div>
-          <label className="text-xs font-extrabold text-[#2b20d6] uppercase tracking-wider block mb-2 ml-1">Staff Email</label>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2 ml-1">Staff Email</label>
           <div className="relative">
-            <Mail className="absolute left-4 top-4 text-[#2b20d6] h-5 w-5" />
+            <Mail className="absolute left-4 top-4 text-gray-400 h-5 w-5" />
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin or supervisor email" 
-              className="w-full bg-[#f0f3ff] border border-blue-100 rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] transition-all"
+              placeholder="name@uonbi.ac.ke" 
+              className="w-full bg-slate-50 border-2 border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 font-medium text-gray-700 outline-none transition-colors"
+              onFocus={(e) => e.target.style.borderColor = BRAND}
+              onBlur={(e) => e.target.style.borderColor = "#f3f4f6"}
             />
           </div>
         </div>
 
         <div>
           <div className="flex justify-between items-end mb-2 ml-1 pr-1">
-            <label className="text-xs font-extrabold text-[#2b20d6] uppercase tracking-wider block">Password</label>
-            <button type="button" className="text-[#2b20d6] text-xs font-bold hover:underline">Forgot Password?</button>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+            <button type="button" className="text-xs font-bold hover:underline" style={{ color: BRAND }}>Forgot?</button>
           </div>
           <div className="relative">
-            <Lock className="absolute left-4 top-4 text-[#2b20d6] h-5 w-5" />
+            <Lock className="absolute left-4 top-4 text-gray-400 h-5 w-5" />
             <input 
               type={showPassword ? "text" : "password"} 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password" 
-              className="w-full bg-[#f0f3ff] border border-blue-100 rounded-xl py-3.5 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-[#2b20d6] transition-all"
+              className="w-full bg-slate-50 border-2 border-gray-100 rounded-2xl py-3.5 pl-12 pr-12 font-medium text-gray-700 outline-none transition-colors"
+              onFocus={(e) => e.target.style.borderColor = BRAND}
+              onBlur={(e) => e.target.style.borderColor = "#f3f4f6"}
             />
             <button 
               type="button"
-              className="absolute right-4 top-4 text-[#2b20d6] focus:outline-none"
+              className="absolute right-4 top-4 text-gray-400 focus:outline-none hover:text-gray-600 transition-colors"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -182,9 +192,10 @@ const handleRedirection = (role) => {
 
         <button 
           disabled={loading}
-          className="w-full bg-[#0000ff] text-white py-4 rounded-xl font-bold text-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 mt-4 disabled:bg-blue-300"
+          className="w-full text-white py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-all shadow-lg active:scale-95 mt-2 disabled:opacity-60 flex justify-center items-center"
+          style={{ backgroundColor: BRAND }}
         >
-          {loading ? "Verifying..." : "Staff Login"}
+          {loading ? "Authenticating..." : "Sign In securely"}
         </button>
       </form>
     </div>

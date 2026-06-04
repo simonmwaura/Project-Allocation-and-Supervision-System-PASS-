@@ -1,24 +1,8 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 
 const BRAND = "#302AE2";
-
-const notices = [
-  {
-    id: 1,
-    author: "Dr Almaz - Project Coordinator",
-    date: "Mar 4",
-    subject: "URGENT: Milestone 1 Formatting Requirements",
-    body: "Hello all, Please ensure your Milestone 1 proposals are submitted strictly in PDF format. Do not upload raw code files to the repository at this stage. Any submissions not in PDF format will be returned unread. Regards, Dr. Almaz",
-  },
-  {
-    id: 2,
-    author: "Dr Almaz - Project Coordinator",
-    date: "Mar 10",
-    subject: "Milestone 2 Deadline Reminder",
-    body: "Dear students, This is a reminder that Milestone 2 submissions are due by March 20th. Please ensure your literature review is complete and formatted according to the guidelines. Regards, Dr. Almaz",
-  },
-];
 
 const NoticeCard = ({ author, date, subject, body }) => (
   <div
@@ -50,16 +34,52 @@ const NoticeCard = ({ author, date, subject, body }) => (
     <p className="font-bold text-sm text-gray-900 mb-1">{subject}</p>
 
     {/* Body */}
-    <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
+    <p className="text-sm text-gray-500 whitespace-pre-wrap leading-relaxed">{body}</p>
   </div>
 );
 
 const CoordinatorNotices = () => {
   const navigate = useNavigate();
+  const [notices, setNotices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/");
+          return;
+        }
+
+        const response = await fetch("http://127.0.0.1:5000/api/students/broadcasts", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setNotices(data.data);
+        } else {
+          setError(data.message || "Failed to load notices.");
+        }
+      } catch (err) {
+        setError("Network error. Could not connect to the server.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, [navigate]);
 
   return (
     <div className="w-full flex flex-col px-4 pt-6 pb-12">
-
       {/* Back Button */}
       <div className="mb-6">
         <button
@@ -79,15 +99,26 @@ const CoordinatorNotices = () => {
 
       {/* Notices List */}
       <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
-        {notices.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center text-[#302AE2] font-bold animate-pulse mt-20">
+            Loading notices...
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 mt-20">{error}</div>
+        ) : notices.length === 0 ? (
           <p className="text-center text-gray-400 mt-20">No notices at the moment.</p>
         ) : (
           notices.map((notice) => (
-            <NoticeCard key={notice.id} {...notice} />
+            <NoticeCard 
+              key={notice.id} 
+              author={notice.author}
+              date={notice.date}
+              subject={notice.title}  // Mapped from backend 'title'
+              body={notice.message}   // Mapped from backend 'message'
+            />
           ))
         )}
       </div>
-
     </div>
   );
 };

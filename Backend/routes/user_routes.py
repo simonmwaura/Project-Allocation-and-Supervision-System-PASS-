@@ -2,12 +2,30 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from werkzeug.security import check_password_hash,generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
+from sqlalchemy import cast, Integer
+from datetime import datetime, timedelta
 
+# Corrected and complete imports from your models.py
 from models import (
-    db, User, Student, Supervisor, Project_Pitch,
-    Supervisor_Interest, Research_Tag, Student_Submission,
-    Submission_Attachment, Milestone, Coordinator
+    db, 
+    User, 
+    Student, 
+    Supervisor, 
+    Coordinator, 
+    CoordinatorHistory,
+    Panel, 
+    Panel_Member, 
+    AcademicCycle, 
+    Project_Pitch, 
+    Supervisor_Interest, 
+    Research_Tag, 
+    Student_Submission, 
+    Submission_Attachment, 
+    Milestone, 
+    Broadcast,
+    Upload_log
+
 )
 
 user_bp = Blueprint('users', __name__)
@@ -348,6 +366,7 @@ def unsuspend_user(target_user_id):
         db.session.rollback()
         print(f"\n❌ UNSUSPEND FAILED FOR USER {target_user_id}: {str(e)}\n")
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
+    
 # ==========================================
 # 1. GET CURRENT USER PROFILE
 # ==========================================
@@ -489,53 +508,82 @@ def delete_user_account(target_user_id):
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
     
 # ==========================================
-# 10. SYSTEM RESET (DANGER ZONE)
+# 10. SYSTEM RESET (FIXED WITH AUTO-REBUILD)
 # ==========================================
 @user_bp.route('/system-reset', methods=['POST'])
 @jwt_required()
 def system_reset():
     try:
-        # 1. Security Check: Only the Master Admin can trigger a reset
         current_user_id = int(get_jwt_identity())
         current_admin = User.query.get(current_user_id)
         
         if not current_admin or current_admin.user_role != 'Administrator':
-            return jsonify({"status": "error", "message": "Unauthorized. Only the Master Admin can perform a system reset."}), 403
+            return jsonify({"status": "error", "message": "Unauthorized."}), 403
 
         data = request.get_json()
-        target = data.get('target') # Expected: 'students', 'faculty', or 'all'
+        target = data.get('target')
 
-        if target == 'students':
-            # Delete all Student profiles, then delete the User accounts tied to them
-            Student.query.delete()
-            User.query.filter_by(user_role='Student').delete()
-            message = "All student records have been permanently deleted."
+        # DELETE HIERARCHY: Always delete children before parents
+        # 1. Delete all attachments and submissions (Leaves)
+        db.session.query(Upload_log).delete() 
+        db.session.query(Submission_Attachment).delete()
+        db.session.query(Student_Submission).delete()
+        
+        # 2. Delete all linkages (Intermediates)
+        db.session.query(Project_Pitch).delete()
+        db.session.query(Panel_Member).delete()
+        db.session.query(Supervisor_Interest).delete()
+        db.session.query(Research_Tag).delete()
+        db.session.query(Broadcast).delete()
+        
+        # 3. Target-specific deletions
+        if target in ['faculty', 'all']:
+            db.session.query(CoordinatorHistory).delete()
+            db.session.query(Coordinator).delete()
+            db.session.query(Panel).delete()
+            db.session.query(Supervisor).delete()
+            # Delete associated User accounts
+            db.session.query(User).filter(User.user_role.in_(['Supervisor', 'Coordinator'])).delete(synchronize_session=False)
 
-        elif target == 'faculty':
-            # Delete in strict order to avoid Foreign Key errors
-            Coordinator.query.delete()
-            Supervisor.query.delete()
-            User.query.filter(User.user_role.in_(['Supervisor', 'Coordinator'])).delete()
-            message = "All faculty (Supervisors and Coordinators) have been permanently deleted."
+        if target in ['students', 'all']:
+            db.session.query(Student).delete()
+            # Delete associated User accounts
+            db.session.query(User).filter(User.user_role == 'Student').delete(synchronize_session=False)
 
-        elif target == 'all':
-            # Wipe everyone EXCEPT the current Master Admin
-            Student.query.delete()
-            Coordinator.query.delete()
-            Supervisor.query.delete()
-            User.query.filter(User.user_id != current_user_id).delete()
-            message = "FACTORY RESET: All users have been wiped. Only the Master Admin remains."
+        if target == 'all':
+            # Wipe clean everything left in Users except Admin
+            db.session.query(User).filter(User.user_id != current_user_id).delete(synchronize_session=False)
+
+            # --- THE NUKE & RESURRECTION OF MILESTONES ---
+            db.session.query(Milestone).delete()
+
+            # 1. Ensure an active cycle exists so we have an ID to attach to
+            cycle = AcademicCycle.query.filter_by(is_active=True).first()
+            if not cycle:
+                cycle = AcademicCycle(label="2025/2026", is_active=True)
+                db.session.add(cycle)
+                db.session.flush() # Flushes to the database to generate the cycle_id without committing yet
+
+            now = datetime.utcnow()
             
-        else:
-            return jsonify({"status": "error", "message": "Invalid reset target."}), 400
+            # 2. Re-inject the default milestones
+            default_milestones = [
+                Milestone(milestone_name="Project Proposal", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=2)),
+                Milestone(milestone_name="Final Presentation & Report", cycle_id=cycle.cycle_id, year='2', is_required=True, due_date=now + timedelta(weeks=15)),
+                Milestone(milestone_name="Semester 1: Project Proposal", cycle_id=cycle.cycle_id, year='4', is_required=True, due_date=now + timedelta(weeks=4)),
+                Milestone(milestone_name="Semester 2: Progress Report", cycle_id=cycle.cycle_id, year='4', is_required=True, due_date=now + timedelta(weeks=18)),
+                Milestone(milestone_name="Final Presentation & Report", cycle_id=cycle.cycle_id, year='4', is_required=True, due_date=now + timedelta(weeks=30)),
+            ]
+            db.session.bulk_save_objects(default_milestones)
 
+        # Commit everything at once. If any of the above fails, the whole thing rolls back.
         db.session.commit()
-        return jsonify({"status": "success", "message": message}), 200
+        return jsonify({"status": "success", "message": "System reset completed. Defaults restored."}), 200
 
     except Exception as e:
         db.session.rollback()
         print(f"\n❌ SYSTEM RESET FAILED: {str(e)}\n")
-        return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
     
 # ==========================================
 # 11. ADMIN: GET SYSTEM STATISTICS

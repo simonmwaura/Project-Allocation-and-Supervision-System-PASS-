@@ -122,26 +122,27 @@ const ProjectOverview = () => {
           </div>
 
           <button
-  onClick={() => navigate("/student/myproject")} // <-- ADD THIS LINE
-  className="w-full mt-8 py-3 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-colors shadow-sm"
-  style={{ backgroundColor: BRAND }}
->
-  View all project details
-</button>
+            onClick={() => navigate("/student/myproject")} 
+            className="w-full mt-8 py-3 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-colors shadow-sm"
+            style={{ backgroundColor: BRAND }}
+          >
+            Back to Project Workspace
+          </button>
         </div>
 
-        {/* Card 2: Upcoming Deadline */}
+        {/* Card 2: Upcoming Deadline (FIXED FALLBACKS) */}
         <div className="bg-white border-2 rounded-2xl p-6 shadow-sm flex flex-col h-full" style={{ borderColor: BRAND }}>
           <h3 className="text-xl font-bold text-center mb-6" style={{ color: BRAND }}>Upcoming Deadline</h3>
 
           <div className="flex flex-col gap-3 text-[15px] flex-1">
             <p>
               <span className="font-bold" style={{ color: BRAND }}>Task : </span>
-              <span className="text-gray-500 font-medium">{projectData.deadlineTask}</span>
+              {/* Added fallback text so it doesn't look broken */}
+              <span className="text-gray-500 font-medium">{projectData.deadlineTask || "No pending tasks at the moment"}</span>
             </p>
             <p>
               <span className="font-bold" style={{ color: BRAND }}>Due : </span>
-              <span className="text-red-600 font-semibold">{projectData.deadlineDue}</span>
+              <span className="text-red-600 font-semibold">{projectData.deadlineDue || "TBD"}</span>
             </p>
           </div>
 
@@ -155,7 +156,7 @@ const ProjectOverview = () => {
         </div>
       </div>
 
-      {/* Bottom Card: Milestones — dynamic based on student year */}
+      {/* Bottom Card: Milestones */}
       <div
         className="bg-white border-2 rounded-2xl p-8 shadow-sm flex flex-col mt-2 relative z-10"
         style={{ borderColor: BRAND }}
@@ -169,18 +170,20 @@ const ProjectOverview = () => {
         ) : (
           <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-4 md:px-12 mb-4">
 
-            {/* Background grey line — spans between first and last node */}
+            {/* Background grey line */}
             <div className="absolute top-1/2 left-8 right-8 h-1.5 bg-gray-200 -z-10 -translate-y-1/2 rounded-full" />
 
             {milestones.map((m, index) => {
-              const isActive = index === 0;
-              // Strip the "Milestone N - " prefix so labels are short and clean
+              // Highlight the first pending milestone as active
+              const firstPendingIndex = milestones.findIndex(ms => ms.status === 'Pending');
+              const isActive = index === firstPendingIndex || m.status === 'Submitted' || m.status === 'Graded';
+              
               const shortName = m.milestone_name.replace(/^Milestone \d+ - /, "");
 
               return (
                 <div key={m.milestone_id} className="flex flex-col items-center relative z-10">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-[6px] border-white outline outline-2 outline-white shadow-md"
+                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-[6px] border-white outline outline-2 outline-white shadow-md transition-colors"
                     style={{
                       backgroundColor: isActive ? BRAND : "#d1d5db",
                       color: isActive ? "white" : "transparent",
@@ -208,7 +211,6 @@ const ProjectOverview = () => {
           </div>
         )}
 
-        {/* Spacer for the absolute-positioned labels below the circles */}
         <div className="h-16" />
       </div>
     </div>

@@ -28,7 +28,6 @@ const SubmissionCard = ({ milestone, submittedAt, files }) => {
     try {
       const token = localStorage.getItem("token");
       
-      // Fetch the file securely with the JWT token
       const response = await fetch(`http://127.0.0.1:5000/api/students/download/${filename}`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` }
@@ -38,10 +37,7 @@ const SubmissionCard = ({ milestone, submittedAt, files }) => {
         throw new Error("File not found or access denied.");
       }
 
-      // Convert the response into a raw file blob
       const blob = await response.blob();
-      
-      // Create a temporary invisible link in the browser to force download
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -63,28 +59,33 @@ const SubmissionCard = ({ milestone, submittedAt, files }) => {
   };
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-blue-600 px-5 py-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="w-full bg-white rounded-2xl border border-gray-200 px-6 py-5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        
+        {/* Left: Icon & Details */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="flex-shrink-0"><CheckCircleIcon /></div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm sm:text-base break-words" style={{ color: BRAND }}>{milestone}</p>
-            <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Submitted: {submittedAt}</p>
+          <div className="flex flex-col min-w-0">
+            <p className="font-bold text-lg truncate" style={{ color: BRAND }}>{milestone}</p>
+            <p className="text-sm text-gray-500 mt-0.5">Submitted: {submittedAt}</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:items-start sm:min-w-[220px]">
-          <div className="flex flex-col gap-1">
+        {/* Right: Files & Download Button */}
+        <div className="flex flex-col gap-3 sm:items-end shrink-0 sm:max-w-[45%] min-w-0 w-full sm:w-auto">
+          
+          {/* Files Container - Truncates neatly with an ellipsis */}
+          <div className="flex flex-col gap-1 w-full min-w-0">
             {files.map((file) => (
-              <div key={file} className="flex items-center gap-2 text-sm text-gray-600">
-                <FiPaperclip size={13} className="text-gray-400 flex-shrink-0" />
-                <span className="break-all">{file}</span>
+              <div key={file} className="flex items-center sm:justify-end gap-2 text-sm text-gray-600 w-full min-w-0">
+                <FiPaperclip size={14} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate cursor-default" title={file}>{file}</span>
               </div>
             ))}
           </div>
-          {/* --- UPDATED BUTTON --- */}
+
           <button
-            className="w-full sm:w-auto px-6 py-2 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity mt-1 disabled:opacity-50 disabled:cursor-wait"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-wait shadow-sm"
             style={{ backgroundColor: BRAND }}
             onClick={() => handleDownload(files[0])}
             disabled={isDownloading || !files || files.length === 0}
@@ -92,6 +93,7 @@ const SubmissionCard = ({ milestone, submittedAt, files }) => {
              {isDownloading ? "Downloading..." : "Download"}
           </button>
         </div>
+        
       </div>
     </div>
   );

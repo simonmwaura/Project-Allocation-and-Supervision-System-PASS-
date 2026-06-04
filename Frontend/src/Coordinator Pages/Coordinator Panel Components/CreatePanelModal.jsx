@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-const BRAND = "#2b20d6";
+const BRAND = "#302AE2"; // Locked to your exact theme
 
 const CreatePanelModal = ({ onClose, onCreated }) => {
   const [numPanels, setNumPanels] = useState("");
@@ -17,7 +17,8 @@ const CreatePanelModal = ({ onClose, onCreated }) => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:5000/api/coordinator/generate-panels", {
+      // FIXED BUG: Updated /coordinator/ to /coordinators/ to match your Flask backend
+      const response = await fetch("http://127.0.0.1:5000/api/coordinators/generate-panels", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -29,7 +30,7 @@ const CreatePanelModal = ({ onClose, onCreated }) => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(`${numPanels} panels generated successfully!`);
+        toast.success(`${numPanels} ${parseInt(numPanels) === 1 ? 'panel' : 'panels'} generated successfully!`);
         onCreated(); // Refresh the parent list
       } else {
         toast.error(data.message || "Failed to generate panels.");
@@ -70,10 +71,13 @@ const CreatePanelModal = ({ onClose, onCreated }) => {
             <select
               value={numPanels}
               onChange={(e) => setNumPanels(e.target.value)}
-              className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-slate-200 text-gray-600 appearance-none focus:outline-none focus:border-blue-400 transition-colors"
+              className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-slate-200 text-gray-600 appearance-none outline-none transition-colors"
+              onFocus={(e) => e.target.style.borderColor = BRAND}
+              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"} // slate-200
             >
               <option value="" disabled>Select the number of panels to generate</option>
-              {[1, 2, 3, 4, 5].map(n => (
+              {/* Added 6 to the array so they can generate all at once */}
+              {[1, 2, 3, 4, 5, 6].map(n => (
                 <option key={n} value={n}>{n} {n === 1 ? 'Panel' : 'Panels'}</option>
               ))}
             </select>
@@ -90,14 +94,14 @@ const CreatePanelModal = ({ onClose, onCreated }) => {
         <div className="flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 h-14 rounded-2xl border-2 border-red-400 text-red-500 font-bold hover:bg-red-50 transition-colors"
+            className="flex-1 h-14 rounded-2xl border-2 border-red-200 text-red-500 font-bold hover:bg-red-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleGenerate}
             disabled={isSubmitting}
-            className="flex-1 h-14 rounded-2xl text-white font-bold shadow-lg shadow-blue-200 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+            className="flex-1 h-14 rounded-2xl text-white font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center disabled:opacity-70"
             style={{ backgroundColor: BRAND }}
           >
             {isSubmitting ? "Generating..." : "Generate"}

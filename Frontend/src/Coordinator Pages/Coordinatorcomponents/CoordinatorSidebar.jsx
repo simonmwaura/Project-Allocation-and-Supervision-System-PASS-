@@ -1,4 +1,3 @@
-import React from "react";
 import { FiGrid, FiUsers, FiClipboard, FiUser, FiLogOut, FiX, FiRefreshCw } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -15,15 +14,12 @@ const NAV = [
 
 const CoordinatorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const isActive = (path) => location.pathname.startsWith(path);
+  const navigate  = useNavigate();
+  const isActive  = (path) => location.pathname.startsWith(path);
 
-  // Retrieve user data
+  // Login response stores role as "role" not "user_role"
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  
-  // Based on your database models, every Coordinator is a Supervisor. 
-  // If their user_role is Coordinator, we grant them the switch button.
-  const isAlsoSupervisor = user.user_role === 'Coordinator' || (user.roles && user.roles.includes('Coordinator'));
+  const isAlsoSupervisor = user.role === "Coordinator";
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -32,18 +28,18 @@ const CoordinatorSidebar = ({ isOpen, setIsOpen }) => {
     navigate("/");
   };
 
+  const handleSwitch = () => {
+    toast.info("Switching to Supervisor portal…");
+    navigate("/supervisor/dashboard");
+  };
+
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div className="fixed inset-0 z-40 bg-black/20 md:hidden" onClick={() => setIsOpen(false)} />
       )}
-      
-      <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-white border-r border-blue-800 flex flex-col px-4 py-6 z-50 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+
+      <aside className={`fixed top-0 left-0 h-screen w-64 bg-white border-r border-blue-800 flex flex-col px-4 py-6 z-50 transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex justify-end mb-2">
           <button onClick={() => setIsOpen(false)} style={{ color: BRAND }} className="p-1">
             <FiX size={22} />
@@ -58,8 +54,7 @@ const CoordinatorSidebar = ({ isOpen, setIsOpen }) => {
         <nav className="flex flex-col gap-2 flex-1">
           {NAV.map(({ to, icon: Icon, label }) => (
             <Link
-              key={to}
-              to={to}
+              key={to} to={to}
               className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
               style={isActive(to) ? { background: BRAND, color: "#fff" } : { color: BRAND }}
             >
@@ -68,15 +63,15 @@ const CoordinatorSidebar = ({ isOpen, setIsOpen }) => {
             </Link>
           ))}
 
-          {/* IDENTITY SWITCHER */}
+          {/* Toggle — only visible when the logged-in user is a Coordinator (who is also a Supervisor) */}
           {isAlsoSupervisor && (
             <button
-              onClick={() => navigate('/supervisor/dashboard')}
-              className="flex items-center gap-3 px-4 py-3 mt-6 rounded-xl font-semibold text-base w-full text-left bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100 shadow-sm"
-              style={{ color: BRAND }}
+              onClick={handleSwitch}
+              className="flex items-center gap-3 px-4 py-3 mt-4 rounded-xl font-semibold text-sm w-full text-left transition-all border-2 hover:opacity-90"
+              style={{ backgroundColor: "#eef0ff", borderColor: BRAND, color: BRAND }}
             >
-              <FiRefreshCw size={20} />
-              Switch to Supervisor
+              <FiRefreshCw size={18} />
+              Switch to Supervisor View
             </button>
           )}
         </nav>

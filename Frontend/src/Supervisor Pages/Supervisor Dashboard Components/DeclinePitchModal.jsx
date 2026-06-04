@@ -16,7 +16,8 @@ const DeclinePitchModal = ({
 
   const handleConfirm = () => {
     onConfirm(reason);
-    setReason("");
+    // FIX: Removed setReason("") from here. 
+    // This allows the text to stay visible while the "Declining..." state is active.
   };
 
   const handleClose = () => {
