@@ -265,8 +265,11 @@ export default function ManageCoordinators({ availableFaculty = [] }) {
                     <td className="border-[1.5px] p-3 font-bold text-gray-800 text-[14px]" style={{ borderColor: BRAND }}>{index + 1}</td>
                     <td className="border-[1.5px] p-3 font-bold text-gray-900 text-[14px]" style={{ borderColor: BRAND }}>{record.date}</td>
                     <td className="border-[1.5px] p-3 font-bold text-gray-900 text-[14px] text-center" style={{ borderColor: BRAND }}>{record.year}</td>
-                    <td className="border-[1.5px] p-3 font-bold text-gray-800 text-[14px]" style={{ borderColor: BRAND }}>{record.prev}</td>
-                    <td className="border-[1.5px] p-3 font-bold text-gray-800 text-[14px]" style={{ borderColor: BRAND }}>{record.curr}</td>
+                    
+                    {/* --- FIXED THESE TWO LINES --- */}
+                    <td className="border-[1.5px] p-3 font-bold text-gray-800 text-[14px]" style={{ borderColor: BRAND }}>{record.previous_coordinator}</td>
+                    <td className="border-[1.5px] p-3 font-bold text-gray-800 text-[14px]" style={{ borderColor: BRAND }}>{record.current_coordinator}</td>
+                    
                     <td className="border-[1.5px] p-3 font-medium text-gray-700 text-[13px]" style={{ borderColor: BRAND }}>{record.reason}</td>
                   </tr>
                 )) : (

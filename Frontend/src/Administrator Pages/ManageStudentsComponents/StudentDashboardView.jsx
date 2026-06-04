@@ -5,9 +5,9 @@ import {
   FiUserMinus, 
   FiUserX, 
   FiSearch, 
-  FiChevronDown
+  FiChevronDown,
+  FiDownload
 } from "react-icons/fi";
-// IMPORT THE NEW COMPONENT
 import StudentAccountDetails from "./StudentAccountDetails"; 
 
 const BRAND = "#2b20d6";
@@ -34,35 +34,26 @@ const MetricCard = ({ icon: Icon, title, value, color, bgClass, textColor }) => 
 
 // --- Status Badge ---
 const StatusBadge = ({ status }) => {
-  if (status === "Active") {
-    return <span className="px-4 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Active</span>;
-  }
-  if (status === "Pending") {
-    return <span className="px-4 py-1 rounded-full border border-yellow-400 text-gray-800 bg-yellow-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Pending</span>;
-  }
-  if (status === "Suspended") {
-    return <span className="px-4 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Suspended</span>;
-  }
+  if (status === "Active") return <span className="px-4 py-1 rounded-full border border-green-500 text-green-600 bg-green-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Active</span>;
+  if (status === "Pending") return <span className="px-4 py-1 rounded-full border border-yellow-400 text-gray-800 bg-yellow-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Pending</span>;
+  if (status === "Suspended") return <span className="px-4 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-bold w-24 inline-block text-center whitespace-nowrap">Suspended</span>;
   return null;
 };
 
-// --- MAIN DASHBOARD COMPONENT ---
-const StudentDashboardView = ({ students }) => {
+const StudentDashboardView = ({ students, onExport }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [yearFilter, setYearFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   
   const [isYearOpen, setIsYearOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null); 
   
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === "Active").length;
   const pendingStudents = students.filter(s => s.status === "Pending").length;
   const suspendedStudents = students.filter(s => s.status === "Suspended").length;
   
-  // This state tells React whether to show the Dashboard OR the Details view
-  const [selectedStudent, setSelectedStudent] = useState(null); 
-
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const matchesSearch = 
@@ -74,7 +65,6 @@ const StudentDashboardView = ({ students }) => {
     });
   }, [students, searchQuery, yearFilter, statusFilter]);
 
-  // IF A STUDENT IS SELECTED, LOAD THE NEW COMPONENT
   if (selectedStudent) {
       return (
           <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col shadow-sm" style={{ borderColor: BRAND }}>
@@ -83,12 +73,22 @@ const StudentDashboardView = ({ students }) => {
       );
   }
 
-  // OTHERWISE SHOW THE DASHBOARD
   return (
     <div className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col items-center shadow-sm" style={{ borderColor: BRAND }}>
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-8 sm:mb-10" style={{ color: BRAND }}>
-        Student Account Management
-      </h2>
+      
+      {/* --- HEADER --- */}
+      <div className="flex flex-col sm:flex-row justify-between items-center w-full mb-8 sm:mb-10 gap-4">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-center" style={{ color: BRAND }}>
+          Student Account Management
+        </h2>
+        <button 
+          onClick={onExport}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-md"
+        >
+          <FiDownload size={18} />
+          Export CSV
+        </button>
+      </div>
 
       {/* 1. Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">
@@ -186,15 +186,12 @@ const StudentDashboardView = ({ students }) => {
                       <StatusBadge status={row.status} />
                     </td>
                     <td className="border-[1.5px] p-3 text-center" style={{ borderColor: BRAND }}>
-                      
-                      {/* --- FIX: Updated Button Logic & Styling --- */}
                       <button 
                         onClick={() => setSelectedStudent(row)}
                         className="px-4 py-2 rounded-lg border-2 border-[#2b20d6] text-[#2b20d6] font-bold text-sm hover:bg-[#2b20d6] hover:text-white transition-all"
                       >
                         View Details
                       </button>
-
                     </td>
                   </tr>
                 ))

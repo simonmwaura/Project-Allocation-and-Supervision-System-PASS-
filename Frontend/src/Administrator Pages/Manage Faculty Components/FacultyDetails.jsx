@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiUser, FiMail, FiPhone } from 'react-icons/fi';
 import SuspendAccountModal from '../ManageStudentsComponents/SuspendAccountModal';
 import UnsuspendAccountModal from '../ManageStudentsComponents/UnsuspendAccountModal';
+import DeleteAccountModal from '../ManageStudentsComponents/DeleteAccountModal'; // 1. Imported Delete Modal
 import { toast } from 'react-toastify'; 
 
 const BRAND = "#2b20d6";
@@ -17,13 +18,14 @@ const FacultyDetails = () => {
   // --- BULLETPROOF ID CATCHER ---
   const targetId = facultyMember?.id || facultyMember?.user_id;
 
-  // Keep track of their status and reason (Must be declared AFTER facultyMember)
+  // Keep track of their status and reason
   const status = facultyMember?.status; 
   const suspensionReason = facultyMember?.suspension_reason;
 
   // --- STATES ---
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isUnsuspendModalOpen, setIsUnsuspendModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // 2. Added Delete State
   const [isProcessing, setIsProcessing] = useState(false); 
   const [isSaving, setIsSaving] = useState(false);         
 
@@ -146,6 +148,37 @@ const FacultyDetails = () => {
     }
   };
 
+  // --- 4. THE DELETE WORKHORSE ---
+  const handleDeleteConfirm = async (reason) => {
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`http://127.0.0.1:5000/api/users/${targetId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ reason: reason })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`Account permanently deleted: ${formData.name}`); 
+        setIsDeleteModalOpen(false);
+        setTimeout(() => navigate('/administrator/managefaculty'), 1500);
+      } else {
+        toast.error(data.message || "Deletion failed.");
+      }
+    } catch (error) {
+      toast.error("Connection error. Could not delete account.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
       
@@ -163,6 +196,13 @@ const FacultyDetails = () => {
         onConfirm={handleUnsuspendConfirm}
         userName={formData.name}
         reason={suspensionReason}
+      />
+
+      <DeleteAccountModal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => !isProcessing && setIsDeleteModalOpen(false)} 
+        onConfirm={handleDeleteConfirm} 
+        userName={formData.name} 
       />
 
       {/* --- HEADER --- */}
@@ -205,14 +245,18 @@ const FacultyDetails = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200">
-            <h3 className="text-lg font-bold mb-2" style={{ color: BRAND }}>Security & Access</h3>
+          {/* THE NEW DELETE BLOCK */}
+          <div className="bg-[#fffdfd] rounded-2xl p-6 shadow-sm border border-red-500">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Delete Account</h3>
             <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-              Send a secure password reset link to the user's email address.
+              Permanently delete this user from the database. This action cannot be undone.
             </p>
             <div className="flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl font-bold border-2 bg-white transition-colors hover:bg-blue-50" style={{ borderColor: BRAND, color: BRAND }}>
-                Send Password Reset
+              <button 
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="w-full px-5 py-2.5 rounded-xl font-bold bg-red-600 text-white transition-colors hover:bg-red-700 shadow-md text-center" 
+              >
+                Permanently Delete
               </button>
             </div>
           </div>

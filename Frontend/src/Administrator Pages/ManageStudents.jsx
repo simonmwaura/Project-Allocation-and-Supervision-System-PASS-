@@ -5,6 +5,26 @@ import StudentDashboardView from './ManageStudentsComponents/StudentDashboardVie
 
 const BRAND = "#2b20d6";
 
+const exportStudentsToCSV = (students) => {
+  const headers = ["Name,Registration Number,Year,Status,Email"];
+  
+  const rows = students.map(s => [
+    `"${s.name.replace(/"/g, '""')}"`, // Wrap in quotes and escape existing quotes
+    s.reg, 
+    s.year, 
+    s.status, 
+    s.email
+  ].join(","));
+
+  const csvContent = [headers, ...rows].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", `PASS_Student_Roster_${new Date().toISOString().slice(0, 10)}.csv`);
+  a.click();
+};
+
 export default function ManageStudents() {
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +85,8 @@ export default function ManageStudents() {
         ) : students.length === 0 ? (
             <NoStudentFound />
         ) : (
-            <StudentDashboardView students={students} />
+            <StudentDashboardView students={students} 
+            onExport={() => exportStudentsToCSV(students)}/>
         )}
     </div>
   );

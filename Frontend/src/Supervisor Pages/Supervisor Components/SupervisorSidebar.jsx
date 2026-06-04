@@ -1,18 +1,23 @@
-import { FiGrid, FiUsers, FiClipboard, FiUser, FiLogOut, FiX } from "react-icons/fi";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Added useNavigate
-import { toast } from "react-toastify"; // Optional: to show a goodbye message
+import { FiGrid, FiUsers, FiClipboard, FiUser, FiLogOut, FiX, FiRefreshCw } from "react-icons/fi";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const BRAND = "#2b20d6";
 
 const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
+
+  // Retrieve user data to check if this Supervisor is also the Coordinator
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isCoordinator = user.user_role === 'Coordinator' || (user.roles && user.roles.includes('Coordinator'));
 
   // --- LOGOUT LOGIC ---
   const handleLogout = () => {
     // 1. Remove the token from local storage
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     
     // 2. Close the mobile sidebar if it's open
     setIsOpen(false);
@@ -26,6 +31,7 @@ const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
+      {/* Mobile Backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/20 md:hidden"
@@ -49,7 +55,7 @@ const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
           <div className="text-sm font-semibold">Supervisor Portal</div>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-2 flex-1">
           <Link
             to="/supervisor/dashboard"
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full transition-colors"
@@ -86,7 +92,21 @@ const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
             Profile
           </Link>
 
-          {/* Attach the handleLogout function to the onClick event */}
+          {/* IDENTITY SWITCHER: Only visible if the user is a Coordinator */}
+          {isCoordinator && (
+            <button
+              onClick={() => navigate('/coordinator/dashboard')}
+              className="flex items-center gap-3 px-4 py-3 mt-6 rounded-xl font-semibold text-base w-full text-left bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100 shadow-sm"
+              style={{ color: BRAND }}
+            >
+              <FiRefreshCw size={20} />
+              Switch to Coordinator
+            </button>
+          )}
+        </nav>
+
+        {/* Separated Logout button for a cleaner layout */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-base w-full text-left transition-colors hover:bg-gray-50"
@@ -95,7 +115,7 @@ const SupervisorSidebar = ({ isOpen, setIsOpen }) => {
             <FiLogOut size={20} />
             Logout
           </button>
-        </nav>
+        </div>
       </aside>
     </>
   );

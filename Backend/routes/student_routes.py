@@ -163,7 +163,8 @@ def get_my_status():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# 5. GET AVAILABLE SUPERVISORS
+# Replace your existing get_available_supervisors route with this
+
 @student_bp.route('/available-supervisors', methods=['GET'])
 @jwt_required()
 def get_available_supervisors():
@@ -174,27 +175,36 @@ def get_available_supervisors():
         for sup in supervisors:
             user = User.query.get(sup.user_id)
             if not user or user.account_status != 'Accepted':
-                continue # Only show active supervisors
-            
+                continue
+
             # Fetch interests
             interests = []
-            sup_interests = Supervisor_Interest.query.filter_by(supervisor_id=sup.supervisor_id).all()
-            for si in sup_interests:
+            for si in Supervisor_Interest.query.filter_by(supervisor_id=sup.supervisor_id).all():
                 tag = Research_Tag.query.get(si.tag_id)
                 if tag:
                     interests.append(tag.tag_name)
 
-            # Calculate slots filled
-            slots_filled = Student.query.filter_by(assigned_supervisor_id=sup.supervisor_id).count()
-            slots_total = sup.capacity if hasattr(sup, 'capacity') else 7
+            # Year-specific slots
+            filled_2nd = Student.query.filter_by(
+                assigned_supervisor_id=sup.supervisor_id, year='2'
+            ).count()
+            filled_4th = Student.query.filter_by(
+                assigned_supervisor_id=sup.supervisor_id, year='4'
+            ).count()
 
             data.append({
                 "id": sup.supervisor_id,
                 "name": f"{user.first_name} {user.last_name}",
                 "email": user.email,
+                "bio": sup.bio or "",
+                "office_location": sup.office_location or "",
+                "office_hours": sup.office_hours or "",
                 "interests": interests,
-                "slotsTotal": slots_total,
-                "slotsFilled": slots_filled
+                # Year-specific capacity
+                "slots_2nd_filled": filled_2nd,
+                "slots_2nd_total": sup.max_2nd_year_capacity,
+                "slots_4th_filled": filled_4th,
+                "slots_4th_total": sup.max_4th_year_capacity,
             })
 
         return jsonify({"status": "success", "data": data}), 200
@@ -206,20 +216,20 @@ def get_available_supervisors():
 # 6. WITHDRAW PITCH
 @student_bp.route('/withdraw-pitch/<int:pitch_id>', methods=['DELETE'])
 @jwt_required()
-def withdraw_pitch(pitch_id): # Accept ID in the URL
+def withdraw_pitch(pitch_id): 
     try:
         user_id = int(get_jwt_identity())
         student = Student.query.filter_by(user_id=user_id).first()
         
-        # Find the specific pitch belonging to this student
+        # Find the specific pitch belonging to this student (ignore status for a second)
         pitch = Project_Pitch.query.filter_by(
             pitch_id=pitch_id, 
-            student_id=student.student_id, 
-            status='Pending'
+            student_id=student.student_id
         ).first()
         
-        if not pitch:
-            return jsonify({"status": "error", "message": "Pitch not found or already processed."}), 404
+        # Check if it exists AND make sure they aren't deleting an Accepted pitch
+        if not pitch or pitch.status == 'Accepted':
+            return jsonify({"status": "error", "message": "Pitch not found or cannot be withdrawn."}), 404
 
         db.session.delete(pitch)
         db.session.commit()

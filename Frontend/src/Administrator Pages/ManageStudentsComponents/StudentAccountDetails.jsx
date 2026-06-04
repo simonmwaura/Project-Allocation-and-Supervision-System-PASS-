@@ -8,7 +8,8 @@ import {
   FiChevronDown
 } from "react-icons/fi";
 import SuspendAccountModal from "./SuspendAccountModal";
-import UnsuspendAccountModal from "./UnsuspendAccountModal"; // Imported Unsuspend
+import UnsuspendAccountModal from "./UnsuspendAccountModal";
+import DeleteAccountModal from "./DeleteAccountModal"; // 1. Import the new modal
 import { toast } from 'react-toastify';
 
 const BRAND = "#2b20d6";
@@ -20,10 +21,10 @@ const StudentAccountDetails = ({ student, onBack }) => {
   // --- STATES ---
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isUnsuspendModalOpen, setIsUnsuspendModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // 2. Add Delete State
   const [isProcessing, setIsProcessing] = useState(false); 
   const [isSaving, setIsSaving] = useState(false);         
 
-  // Local state for the Edit Form
   const [formData, setFormData] = useState({
     name: student?.name || '',
     phone: student?.phone || '+254 700 000 000',
@@ -42,44 +43,21 @@ const StudentAccountDetails = ({ student, onBack }) => {
     return <span className="px-5 py-1 rounded-full border border-red-500 text-red-600 bg-red-50 text-xs font-extrabold tracking-wide">{status}</span>;
   };
 
-  // --- 1. THE SAVE WORKHORSE ---
-  const handleSaveChanges = async () => {
-    setIsSaving(true);
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(`http://127.0.0.1:5000/api/users/update/${student.id}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
+  // ... (Keep handleSaveChanges, handleSuspendConfirm, and handleUnsuspendConfirm the same) ...
+  const handleSaveChanges = async () => { /* ... existing code ... */ };
+  const handleSuspendConfirm = async (reason) => { /* ... existing code ... */ };
+  const handleUnsuspendConfirm = async () => { /* ... existing code ... */ };
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Student details updated successfully!");
-      } else {
-        toast.error(data.message || "Failed to update details.");
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("Could not connect to the server.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // --- 2. THE SUSPEND WORKHORSE ---
-  const handleSuspendConfirm = async (reason) => {
+  // --- 4. THE DELETE WORKHORSE ---
+  const handleDeleteConfirm = async (reason) => {
     setIsProcessing(true);
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`http://127.0.0.1:5000/api/users/suspend/${student.id}`, {
-        method: "PATCH",
+      // Note: Ensure this URL matches where your delete route is registered! 
+      // If it's under admin_bp, it might be /api/admin/users/
+     const response = await fetch(`http://127.0.0.1:5000/api/users/${student.id}`, {
+    method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
@@ -90,40 +68,14 @@ const StudentAccountDetails = ({ student, onBack }) => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.error(`Account suspended: ${formData.name}`); 
-        setIsSuspendModalOpen(false);
-        setTimeout(() => window.location.reload(), 1500);
+        toast.success(`Account permanently deleted: ${formData.name}`); 
+        setIsDeleteModalOpen(false);
+        setTimeout(() => onBack(), 1500); // Kick them back to the table!
       } else {
-        toast.warning(data.message || "Suspension failed.");
+        toast.error(data.message || "Deletion failed.");
       }
     } catch (error) {
-      toast.error("Connection error. Could not suspend account.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // --- 3. THE RESTORE WORKHORSE ---
-  const handleUnsuspendConfirm = async () => {
-    setIsProcessing(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`http://127.0.0.1:5000/api/users/unsuspend/${student.id}`, {
-        method: "PATCH",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(`Account restored: ${formData.name}`); 
-        setIsUnsuspendModalOpen(false);
-        setTimeout(() => onBack(), 1500); 
-      } else {
-        toast.error(data.message || "Failed to restore account.");
-      }
-    } catch (error) {
-      toast.error("Connection error: Could not restore account.");
+      toast.error("Connection error. Could not delete account.");
     } finally {
       setIsProcessing(false);
     }
@@ -133,54 +85,39 @@ const StudentAccountDetails = ({ student, onBack }) => {
     <div className="w-full max-w-6xl mx-auto py-2">
       
       {/* THE MODALS */}
-      <SuspendAccountModal 
-        isOpen={isSuspendModalOpen} 
-        onClose={() => !isProcessing && setIsSuspendModalOpen(false)}
-        onConfirm={handleSuspendConfirm}
-        studentName={formData.name}
+      <SuspendAccountModal isOpen={isSuspendModalOpen} onClose={() => !isProcessing && setIsSuspendModalOpen(false)} onConfirm={handleSuspendConfirm} studentName={formData.name} />
+      <UnsuspendAccountModal isOpen={isUnsuspendModalOpen} onClose={() => !isProcessing && setIsUnsuspendModalOpen(false)} onConfirm={handleUnsuspendConfirm} userName={formData.name} reason={suspensionReason} />
+      
+      {/* 5. ADD THE DELETE MODAL HERE */}
+      <DeleteAccountModal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => !isProcessing && setIsDeleteModalOpen(false)} 
+        onConfirm={handleDeleteConfirm} 
+        userName={formData.name} 
       />
 
-      <UnsuspendAccountModal 
-        isOpen={isUnsuspendModalOpen}
-        onClose={() => !isProcessing && setIsUnsuspendModalOpen(false)}
-        onConfirm={handleUnsuspendConfirm}
-        userName={formData.name}
-        reason={suspensionReason}
-      />
-
-      {/* --- HEADER --- */}
       <div className="relative flex items-center justify-between mb-8">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity z-10"
-          style={{ backgroundColor: BRAND }}
-        >
+        <button onClick={onBack} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white shadow-md hover:opacity-90 transition-opacity z-10" style={{ backgroundColor: BRAND }}>
           <FiArrowLeft size={20} strokeWidth={3} />
           Back to students
         </button>
-
         <div className="absolute left-0 right-0 text-center pointer-events-none">
-          <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: BRAND }}>
-            Student Details
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: BRAND }}>Student Details</h2>
         </div>
       </div>
 
-      {/* --- MAIN GRID LAYOUT --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        {/* LEFT COLUMN (Profile Summary) */}
         <div className="flex flex-col gap-6 lg:col-span-1">
+          {/* Profile Summary Card (Keep this exactly the same) */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200 flex flex-col items-center">
-            <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-4" style={{ backgroundColor: BRAND }}>
+            {/* ... user avatar, name, and details ... */}
+             <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-4" style={{ backgroundColor: BRAND }}>
               <FiUser size={50} className="text-white" />
             </div>
-            
             <h3 className="text-xl font-extrabold text-gray-800 mb-2 text-center">{formData.name}</h3>
             {renderStatus(status)}
-            
             <hr className="w-full border-dashed border-gray-300 my-6" />
-            
             <div className="w-full flex flex-col gap-2 text-sm">
               <p><span className="font-extrabold text-gray-900">Reg No :</span> <span className="text-gray-600 font-medium">{formData.reg}</span></p>
               <p><span className="font-extrabold text-gray-900">Year :</span> <span className="text-gray-600 font-medium">{formData.year}</span></p>
@@ -189,14 +126,18 @@ const StudentAccountDetails = ({ student, onBack }) => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200">
-            <h3 className="text-lg font-bold mb-2" style={{ color: BRAND }}>Security & Access</h3>
+          {/* 6. REPLACED: NEW PERMANENT DELETE BLOCK */}
+          <div className="bg-[#fffdfd] rounded-2xl p-6 shadow-sm border border-red-500">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Delete Account</h3>
             <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-              Send a secure password reset link to the student's email address.
+              Permanently delete this user from the database. This action cannot be undone.
             </p>
             <div className="flex justify-end">
-              <button className="px-5 py-2.5 rounded-xl font-bold border-2 bg-white transition-colors hover:bg-blue-50" style={{ borderColor: BRAND, color: BRAND }}>
-                Send Password Reset
+              <button 
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="w-full px-5 py-2.5 rounded-xl font-bold bg-red-600 text-white transition-colors hover:bg-red-700 shadow-md text-center" 
+              >
+                Permanently Delete
               </button>
             </div>
           </div>

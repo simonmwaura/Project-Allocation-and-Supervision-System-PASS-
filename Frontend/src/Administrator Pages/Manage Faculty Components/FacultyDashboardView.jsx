@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; // <-- 1. ADD THIS IMPORT
 import { 
-  FiUsers, FiUserCheck, FiUserMinus, FiUserX, FiSearch, FiChevronDown 
+  FiUsers, FiUserCheck,FiDownload, FiUserMinus, FiUserX, FiSearch, FiChevronDown 
 } from "react-icons/fi";
 
 const BRAND = "#2b20d6";
@@ -73,7 +73,7 @@ const FacultyAccountDetails = ({ facultyMember, onBack }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const FacultyDashboardView = ({ faculty }) => {
+const FacultyDashboardView = ({ faculty ,onExport}) => {
   const navigate = useNavigate(); // <--- ADD THIS LINE HERE!
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -104,9 +104,21 @@ const FacultyDashboardView = ({ faculty }) => {
       className="w-full max-w-6xl bg-white border-[1.5px] rounded-[1.5rem] p-4 sm:p-6 lg:p-10 flex flex-col items-center shadow-sm"
       style={{ borderColor: BRAND }}
     >
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-8 sm:mb-10" style={{ color: BRAND }}>
-        Supervisors Account Management
-      </h2>
+      {/* HEADER SECTION */}
+      <div className="flex flex-col sm:flex-row justify-between items-center w-full mb-8 sm:mb-10 gap-4">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-center" style={{ color: BRAND }}>
+          Supervisors Account Management
+        </h2>
+        
+        {/* THE EXPORT BUTTON */}
+        <button 
+          onClick={onExport}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-md"
+        >
+          <FiDownload size={18} />
+          Export CSV
+        </button>
+      </div>
 
       {/* 1. Metric Cards Grid (NOW DYNAMIC!) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-10">

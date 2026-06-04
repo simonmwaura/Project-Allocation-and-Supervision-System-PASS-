@@ -38,9 +38,27 @@ const StepIndicator = ({ current, total }) => (
 // ─── Step 1: Confirm Your Details ─────────────────────────────────────────────
 const StepOne = ({ profile, phone, setPhone, onNext }) => {
   const validate = () => {
-    if (!phone || phone.trim().length < 10)
-      return toast.error("Please enter a valid phone number.");
+    // 1. Check for exactly 13 characters
+    if (phone.length !== 13) {
+      return toast.error("Phone number must be exactly 13 characters (e.g., +254715444566).");
+    }
+    // 2. Ensure it starts with '+'
+    if (!phone.startsWith("+")) {
+      return toast.error("Phone number must start with '+'.");
+    }
     onNext();
+  };
+  const handlePhoneChange = (e) => {
+    let value = e.target.value;
+    
+    // Allow only '+' at index 0, and digits elsewhere
+    if (value.length > 0 && value[0] !== '+') value = '+' + value.replace(/\D/g, '');
+    else value = value.replace(/[^\d+]/g, ''); // Remove non-numeric except '+'
+
+    // Limit to 13 characters
+    if (value.length <= 13) {
+      setPhone(value);
+    }
   };
 
   return (
@@ -98,12 +116,15 @@ const StepOne = ({ profile, phone, setPhone, onNext }) => {
           <FiPhone size={18} style={{ color: BRAND }} />
           <input
             type="text"
-            placeholder="+254 7XX XXX XXX"
+            placeholder="+254715444566"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handlePhoneChange}
             className="flex-1 bg-transparent text-sm text-gray-700 outline-none"
           />
         </div>
+        <p className="text-[10px] text-gray-400 font-bold ml-1">
+          {phone.length}/13 characters
+        </p>
       </div>
 
       <button

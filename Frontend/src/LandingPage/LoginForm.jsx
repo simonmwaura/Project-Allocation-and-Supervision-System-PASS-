@@ -13,11 +13,12 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
 
   // FIX 2: A single helper function to handle all routing
- const handleRedirection = (role) => {
+const handleRedirection = (role) => {
     const routes = {
       'Student': "/student/dashboard",
-      'Administrator': "/administrator/dashboard", // <--- UPDATE THIS KEY
+      'Administrator': "/administrator/dashboard",
       'Supervisor': "/supervisor/dashboard",
+      'Coordinator': "/coordinator/dashboard", // <--- ADD THIS LINE
       'Panel Member': "/panel/dashboard"
     };
     
@@ -41,13 +42,14 @@ const LoginForm = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        toast.success("Welcome back!");
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user_role", data.user.role);
-        
-        handleRedirection(data.user.role); // Uses the helper function
-      } else {
+      if (res.ok) {
+  toast.success(`Welcome back, ${data.user.first_name}!`);
+  localStorage.setItem("token", data.access_token);
+  localStorage.setItem("user", JSON.stringify(data.user)); // Optional: Stores the full object
+  localStorage.setItem("user_role", data.user.role);
+  
+  handleRedirection(data.user.role);
+} else {
         toast.error(data.message || "Login failed");
       }
     } catch (error) {
@@ -99,13 +101,14 @@ const LoginForm = () => {
 
       const data = await res.json();
 
-      if (res.ok) {
-        toast.success(`Welcome back, ${data.user.first_name}!`);
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user_role", data.user.role);
-        
-        handleRedirection(data.user.role); // Uses the helper function
-      } else {
+    if (res.ok) {
+  toast.success(`Welcome back, ${data.user.first_name}!`);
+  localStorage.setItem("token", data.access_token);
+  localStorage.setItem("user", JSON.stringify(data.user)); // Optional: Stores the full object
+  localStorage.setItem("user_role", data.user.role);
+  
+  handleRedirection(data.user.role);
+} else {
         toast.error(data.message || "Google Login failed");
       }
     } catch (error) {

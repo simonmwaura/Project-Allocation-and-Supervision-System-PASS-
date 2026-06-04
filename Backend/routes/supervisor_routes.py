@@ -666,3 +666,4 @@ def download_file(filename):
     except Exception as e:
         print(f"\n=== DOWNLOAD ERROR: {str(e)} ===\n")
         return jsonify({"status": "error", "message": "Failed to download file."}), 500
+    
